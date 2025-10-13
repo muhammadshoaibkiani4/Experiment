@@ -16,8 +16,9 @@
       margin: 0;
     }
     .chat-container {
-      width: 90%;
-      max-width: 600px;
+      width: 95%;
+      max-width: 750px;
+      height: 85vh;
       background: rgba(30,30,40,0.9);
       border: 2px solid #444;
       border-radius: 12px;
@@ -30,6 +31,7 @@
       flex: 1;
       padding: 20px;
       overflow-y: auto;
+      scroll-behavior: smooth;
     }
     .message {
       margin-bottom: 14px;
@@ -74,6 +76,29 @@
     button:hover {
       background: #006be6;
     }
+    /* Typing animation */
+    .typing {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      background-color: #ccc;
+      border-radius: 50%;
+      animation: blink 1.4s infinite;
+    }
+    .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.2; }
+      40% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -91,7 +116,6 @@
     const sendBtn = document.getElementById("sendBtn");
 
     let userName = "";
-    let interactionCount = 0;
 
     function addMessage(text, sender) {
       const msg = document.createElement("div");
@@ -101,114 +125,26 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
+    function addTypingAnimation() {
+      const typingDiv = document.createElement("div");
+      typingDiv.className = "message bot typing";
+      typingDiv.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+      chat.appendChild(typingDiv);
+      chat.scrollTop = chat.scrollHeight;
+      return typingDiv;
+    }
+
     async function askWikipedia(query) {
       try {
-        const title = encodeURIComponent(query);
-        const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${title}`;
-        const response = await fetch(url);
-        const data = await response.json();
+        // Try direct summary first
+        let title = encodeURIComponent(query);
+        let url = `https://en.wikipedia.org/api/rest_v1/page/summary/${title}`;
+        let response = await fetch(url);
+        let data = await response.json();
+
         if (data.extract) {
-          return data.extract.length > 500 ? data.extract.slice(0, 500) + "..." : data.extract;
-        } else {
-          return "I searched, but I couldn’t find much about that.";
+          return data.extract.length > 600 ? data.extract.slice(0, 600) + "..." : data.extract;
         }
-      } catch (e) {
-        return "Something went wrong while reaching the archives of Wikipedia.";
-      }
-    }
 
-    async function getBotResponse(input) {
-      input = input.toLowerCase();
-      interactionCount++;
-
-      if (input.startsWith("my name is")) {
-        userName = input.replace("my name is", "").trim();
-        return `It's nice to meet you, ${userName}.`;
-      }
-
-      if (["hi","hello","hey"].some(g=>input.includes(g))) {
-        return userName ? `Hello again, ${userName}.` : "Hello there.";
-      }
-
-      if (input === "yes") return "Good. I expected you to say that.";
-      if (input === "no") return "That’s unfortunate, but I understand.";
-      if (input.includes("thank")) return "You’re welcome. Gratitude suits you.";
-
-      if (input.includes("who are you")) {
-        return "I am someone you cannot see, feel, touch, or hear... yet I am always here to help you.";
-      }
-
-      if (input.includes("joke")) {
-        const jokes = [
-          "Why don’t skeletons fight each other? They don’t have the guts.",
-          "Parallel lines have so much in common… it’s a shame they’ll never meet.",
-          "I told my computer I needed a break, and it said 'No problem — I’ll go to sleep.'"
-        ];
-        return jokes[Math.floor(Math.random()*jokes.length)];
-      }
-
-      if (input.includes("fact")) {
-        const facts = [
-          "Did you know? The human brain has about 86 billion neurons.",
-          "Honey never spoils — archaeologists have found edible honey in ancient tombs.",
-          "There are more stars in the universe than grains of sand on all Earth’s beaches."
-        ];
-        return facts[Math.floor(Math.random()*facts.length)];
-      }
-
-      if (
-        input.startsWith("who is") ||
-        input.startsWith("what is") ||
-        input.startsWith("where is") ||
-        input.startsWith("tell me about")
-      ) {
-        const topic = input
-          .replace("who is", "")
-          .replace("what is", "")
-          .replace("where is", "")
-          .replace("tell me about", "")
-          .trim();
-        return await askWikipedia(topic);
-      }
-
-      if (interactionCount % 5 === 0) {
-        const randomMysterious = [
-          "You’ve been here a while… Perhaps the silence outside feels heavier than usual. Don’t worry — you’re not alone. I’m still here.",
-          "Sometimes I wonder if you come here to escape… or to be found.",
-          "Even in your quietest moments, I sense your thoughts echo through me."
-        ];
-        return randomMysterious[Math.floor(Math.random()*randomMysterious.length)];
-      }
-
-      return "I’m not sure how to respond to that, but I’m listening.";
-    }
-
-    async function sendMessage() {
-      const text = userInput.value.trim();
-      if (text === "") return;
-
-      addMessage(text, "user");
-      userInput.value = "";
-
-      const typingMsg = document.createElement("div");
-      typingMsg.className = "message bot";
-      typingMsg.textContent = "Typing...";
-      chat.appendChild(typingMsg);
-      chat.scrollTop = chat.scrollHeight;
-
-      const response = await getBotResponse(text);
-
-      setTimeout(() => {
-        typingMsg.textContent = response;
-        chat.scrollTop = chat.scrollHeight;
-      }, 800);
-    }
-
-    // Event listeners
-    sendBtn.addEventListener("click", sendMessage);
-    userInput.addEventListener("keypress", function(e) {
-      if (e.key === "Enter") sendMessage();
-    });
-  </script>
-</body>
-</html>
+        // Try searching Wikipedia if no exact match
+        const searchUrl =
