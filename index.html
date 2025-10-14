@@ -1,870 +1,216 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mystic Assistant — Eyes Enabled</title>
-  <style>
-    :root{
-      --bg1: #071021;
-      --bg2: #101523;
-      --accent: #0a84ff;
-      --bot-bg: rgba(255,255,255,0.03);
-      --text: #e6eef8;
-      --muted: #b8c6d8;
-    }
-    [data-theme="light"]{
-      --bg1:#e8f0ff;
-      --bg2:#ffffff;
-      --accent:#0a64ff;
-      --bot-bg: rgba(10,10,10,0.03);
-      --text:#0b1220;
-      --muted:#4a5868;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mystic Assistant</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0c10;
+        color: #c5c6c7;
+        font-family: "Poppins", sans-serif;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
     }
 
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family: Inter, "Segoe UI", system-ui, Arial, sans-serif;background: linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text)}
-    .wrap{display:flex;align-items:center;justify-content:center;height:100%;padding:18px}
-    .chat {
-      width: min(1100px, 96%);
-      height: 88vh;
-      border-radius: 12px;
-      overflow: hidden;
-      display:flex;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.45);
-      border:1px solid rgba(255,255,255,0.04);
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      position: relative;
+    /* Eyes Panel */
+    #eyesPanel {
+        width: 280px;
+        background: radial-gradient(circle at 50% 30%, #1f2833, #0b0c10);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.6);
+        position: relative;
     }
 
-    /* EYES CONTAINER - ABOVE CHAT */
-    .eyes-wrap {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      top: -70px; /* floating above */
-      display:flex;
-      gap:24px;
-      align-items:center;
-      z-index: 40;
-      pointer-events: none;
-    }
-    .eye-aura {
-      width: 260px;
-      height: 100px;
-      border-radius: 60px;
-      filter: blur(22px);
-      opacity: 0.9;
-      transition: background 450ms ease, opacity 400ms ease;
-      transform-origin: center;
-    }
-    .eyes {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      top: -86px;
-      display:flex;
-      gap: 28px;
-      align-items:center;
-      z-index: 50;
-      pointer-events: none;
-    }
     .eye {
-      width: 72px;
-      height: 44px;
-      border-radius: 40px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.25));
-      box-shadow: inset 0 -6px 12px rgba(0,0,0,0.45);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      position: relative;
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.03);
-      transform-origin: center;
-    }
-    .lens {
-      width: 54px;
-      height: 30px;
-      border-radius: 30px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06), rgba(255,255,255,0.01) 10%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.6));
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      position:relative;
-      transition: box-shadow 280ms ease, background 280ms ease, transform 200ms ease;
-    }
-    .pupil {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #071021;
-      position: absolute;
-      transition: transform 260ms cubic-bezier(.2,.9,.2,1), background 260ms ease, box-shadow 260ms ease;
-      box-shadow: 0 0 18px rgba(0,0,0,0.6), inset 0 -2px 6px rgba(255,255,255,0.02);
-      left: calc(50% - 7px);
-      top: calc(50% - 7px);
-      transform: translate(0,0);
+        width: 70px;
+        height: 70px;
+        background: radial-gradient(circle at 50% 40%, #45a29e, #0b0c10);
+        border-radius: 50%;
+        box-shadow: 0 0 20px #45a29e;
+        margin: 15px;
+        animation: blink 6s infinite;
     }
 
-    /* pupil highlight ring (cyber lens look) */
-    .pupil::after {
-      content: '';
-      position: absolute;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%,-50%);
-      pointer-events: none;
-      box-shadow: 0 0 18px rgba(0,0,0,0.25);
-      transition: box-shadow 280ms ease, opacity 280ms;
-      opacity: 0;
+    @keyframes blink {
+        0%, 95%, 100% { transform: scaleY(1); }
+        96%, 99% { transform: scaleY(0.1); }
     }
 
-    /* aura color classes (controlled via JS setting background) */
-    .aura-blue { background: radial-gradient(ellipse at center, rgba(10,132,255,0.18), rgba(10,132,255,0.06)); }
-    .aura-yellow { background: radial-gradient(ellipse at center, rgba(240,200,60,0.22), rgba(240,200,60,0.06)); }
-    .aura-purple { background: radial-gradient(ellipse at center, rgba(169,97,255,0.18), rgba(169,97,255,0.06)); }
-    .aura-red { background: radial-gradient(ellipse at center, rgba(255,80,80,0.18), rgba(255,80,80,0.06)); }
-
-    /* rest of UI */
-    .left {
-      width: 320px;
-      min-width:240px;
-      padding:18px;
-      background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(255,255,255,0.01));
-      backdrop-filter: blur(4px);
-      border-right:1px solid rgba(255,255,255,0.02);
-      display:flex;flex-direction:column;gap:12px;
-    }
-    .brand {font-weight:700; font-size:18px; letter-spacing:0.4px; display:flex;align-items:center;gap:8px}
-    .brand .dot{width:12px;height:12px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px var(--accent)}
-    .small{font-size:13px;color:var(--muted)}
-    .btn {background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
-    .controls {display:flex;flex-direction:column;gap:8px}
-    .mem {font-size:13px;color:var(--muted);padding:8px;border-radius:8px;background:rgba(255,255,255,0.01)}
-    .right {flex:1;display:flex;flex-direction:column}
-    .chatHeader {display:flex;justify-content:space-between;align-items:center;padding:18px;border-bottom:1px solid rgba(255,255,255,0.02)}
-    .title {font-weight:600}
-    .messages {
-      flex:1; padding:18px; overflow-y:auto; scroll-behavior: smooth; display:flex;flex-direction:column;gap:12px;
-      background:
-        radial-gradient(800px 300px at 5% 10%, rgba(10,132,255,0.02), transparent 10%),
-        radial-gradient(600px 200px at 95% 85%, rgba(255,255,255,0.01), transparent 10%);
+    #status {
+        position: absolute;
+        bottom: 20px;
+        text-align: center;
+        font-size: 14px;
+        color: #66fcf1;
+        opacity: 0.8;
     }
 
-    .msg {max-width:80%; padding:12px 14px;border-radius:10px;line-height:1.45; word-break:break-word; opacity:0; transform:translateY(6px); animation:fadeInUp .28s forwards}
-    @keyframes fadeInUp{to{opacity:1;transform:none}}
-
-    .user {margin-left:auto;background:linear-gradient(180deg,var(--accent),#006be6); color:white; box-shadow:0 6px 18px rgba(10,132,255,0.12)}
-    .bot {background:var(--bot-bg); color:var(--text); border:1px solid rgba(255,255,255,0.02); box-shadow:0 6px 18px rgba(0,0,0,0.25)}
-    .meta {font-size:12px;color:var(--muted);margin-top:6px}
-
-    /* neon fade for bot content (subtle) */
-    .bot .content { animation:neon .7s; }
-    @keyframes neon {
-      from { text-shadow:0 0 0 rgba(10,132,255,0); }
-      60% { text-shadow:0 0 8px rgba(10,132,255,0.06); }
-      to { text-shadow:0 0 2px rgba(10,132,255,0.02); }
+    /* Chat Area */
+    #chatContainer {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #1f2833;
+        padding: 20px;
+        overflow: hidden;
     }
 
-    .inputBar {display:flex;gap:8px;padding:14px;border-top:1px solid rgba(255,255,255,0.02);align-items:center}
-    .inputBox {flex:1;display:flex;gap:8px;align-items:center}
-    input[type="text"]{flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:rgba(0,0,0,0.12);color:var(--text);outline:none;font-size:15px}
-    .sendBtn{background:var(--accent);border:none;padding:12px 16px;border-radius:10px;color:white;cursor:pointer}
-    .smallBtn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
-    .typing {display:flex;gap:6px;align-items:center}
-    .dot{width:7px;height:7px;background:#9fbffb;border-radius:50%;opacity:.25; animation:blink 1.4s infinite}
-    .dot:nth-child(2){animation-delay:0.18s}
-    .dot:nth-child(3){animation-delay:0.34s}
-    @keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
-
-    .hint {font-size:13px;color:var(--muted);margin-top:6px}
-
-    /* responsive */
-    @media (max-width:800px){
-      .left{display:none}
-      .chat{width:100%}
-      .eyes-wrap{top:-52px; transform: translateX(-50%) scale(0.86)}
+    #chatBox {
+        flex: 1;
+        overflow-y: auto;
+        border-radius: 10px;
+        padding: 15px;
+        background: #0b0c10;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.6);
     }
-  </style>
+
+    .message {
+        margin: 10px 0;
+        line-height: 1.5;
+    }
+
+    .user {
+        text-align: right;
+        color: #66fcf1;
+    }
+
+    .ai {
+        text-align: left;
+        color: #c5c6c7;
+    }
+
+    #inputContainer {
+        display: flex;
+        margin-top: 15px;
+    }
+
+    #userInput {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        background: #0b0c10;
+        color: #c5c6c7;
+        outline: none;
+    }
+
+    #sendBtn {
+        margin-left: 10px;
+        padding: 12px 18px;
+        background: #45a29e;
+        border: none;
+        border-radius: 10px;
+        color: white;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    #sendBtn:hover {
+        background: #66fcf1;
+    }
+
+    /* Scrollbar */
+    #chatBox::-webkit-scrollbar {
+        width: 6px;
+    }
+    #chatBox::-webkit-scrollbar-thumb {
+        background-color: #45a29e;
+        border-radius: 10px;
+    }
+
+    /* Glow animation */
+    @keyframes auraGlow {
+        0% { box-shadow: 0 0 20px #45a29e; }
+        50% { box-shadow: 0 0 40px #66fcf1; }
+        100% { box-shadow: 0 0 20px #45a29e; }
+    }
+
+    .activeEye {
+        animation: auraGlow 3s infinite alternate;
+    }
+
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="chat" id="chatRoot" data-theme="">
-      <!-- EYES AURA AND EYES -->
-      <div class="eyes-wrap" aria-hidden="true">
-        <div id="eyeAura" class="eye-aura aura-blue"></div>
-        <div class="eyes" id="eyes">
-          <div class="eye" id="eyeLeft">
-            <div class="lens"><div class="pupil" id="pupilLeft"></div></div>
-          </div>
-          <div class="eye" id="eyeRight">
-            <div class="lens"><div class="pupil" id="pupilRight"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="left">
-        <div class="brand"><div class="dot"></div><div>Mystic Assistant</div></div>
-        <div class="small">A quiet companion — helpful, curious, and a little mysterious.</div>
-        <div class="controls">
-          <button class="btn" id="toggleTheme">Toggle Theme</button>
-          <button class="btn" id="clearChat">Clear Chat</button>
-          <button class="btn" id="toggleSound">Ambient: Off</button>
-        </div>
-        <div class="mem">
-          <div style="font-weight:600">Memory</div>
-          <div id="memoryBox" class="small" style="margin-top:8px">No name stored yet.</div>
-        </div>
-        <div style="margin-top:auto;font-size:12px;color:var(--muted)">Tip: try "quiz me", "what's the weather in Paris", "my name is ...", "convert 10 USD to PKR".</div>
-      </div>
-
-      <div class="right">
-        <div class="chatHeader">
-          <div class="title">Mystic Assistant</div>
-          <div class="small">Connected — offline features + free APIs</div>
-        </div>
-
-        <div class="messages" id="messages"></div>
-
-        <div class="inputBar">
-          <div class="inputBox">
-            <input id="userInput" type="text" placeholder="Ask me something..." autocomplete="off" />
-            <div id="sendBtn" class="sendBtn">Send</div>
-          </div>
-        </div>
-      </div>
+    <!-- Eyes Panel -->
+    <div id="eyesPanel">
+        <div class="eye" id="eyeLeft"></div>
+        <div class="eye" id="eyeRight"></div>
+        <div id="status">Status: Offline</div>
     </div>
-  </div>
 
-  <script>
-/* ---------------------------
-  Mystic Assistant + Cyber Eyes
-  - Integrated into your existing assistant
-  - Eyes: random pupil movement, blinking, aura color by mood
-  - Ambient hum toggle
-  --------------------------- */
+    <!-- Chat Area -->
+    <div id="chatContainer">
+        <div id="chatBox"></div>
+        <div id="inputContainer">
+            <input type="text" id="userInput" placeholder="Type your message...">
+            <button id="sendBtn">Send</button>
+        </div>
+    </div>
 
-(async function(){
-  // Elements
-  const messagesEl = document.getElementById('messages');
-  const userInput = document.getElementById('userInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const memoryBox = document.getElementById('memoryBox');
-  const chatRoot = document.getElementById('chatRoot');
-  const toggleThemeBtn = document.getElementById('toggleTheme');
-  const clearChatBtn = document.getElementById('clearChat');
-  const toggleSoundBtn = document.getElementById('toggleSound');
+    <!-- Audio Placeholder -->
+    <audio id="ambientAudio" loop>
+        <source src="ethereal_core.mp3" type="audio/mpeg">
+    </audio>
 
-  // Eye elements
-  const eyeAura = document.getElementById('eyeAura');
-  const pupilLeft = document.getElementById('pupilLeft');
-  const pupilRight = document.getElementById('pupilRight');
-  const eyeLeft = document.getElementById('eyeLeft');
-  const eyeRight = document.getElementById('eyeRight');
+<script>
+const chatBox = document.getElementById("chatBox");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
+const eyeLeft = document.getElementById("eyeLeft");
+const eyeRight = document.getElementById("eyeRight");
+const statusEl = document.getElementById("status");
+const ambientAudio = document.getElementById("ambientAudio");
 
-  // State
-  let userName = localStorage.getItem('mystic_name') || '';
-  let theme = localStorage.getItem('mystic_theme') || ''; // '' = dark, 'light'
-  if(theme) chatRoot.setAttribute('data-theme', theme);
-  let shortMemory = []; // last few messages for context
-  const MEMORY_LIMIT = 12;
-  let quizState = null; // {questions, index, score}
-  let lastMessages = []; // message history for "context"
-  let glitchCounter = 0;
-  let isProcessing = false;
+let powered = false;
 
-  // Ambient sound (WebAudio) setup
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  let audioCtx = null;
-  let ambientOsc = null;
-  let ambientGain = null;
-  let ambientOn = false;
-  function ensureAudio(){
-    if(!AudioCtx) return false;
-    if(!audioCtx) audioCtx = new AudioCtx();
-    return true;
-  }
-  function startAmbient(){
-    if(!ensureAudio()) return;
-    if(ambientOn) return;
-    ambientOsc = audioCtx.createOscillator();
-    ambientGain = audioCtx.createGain();
-    ambientOsc.type = 'sine';
-    ambientOsc.frequency.value = 80; // low hum
-    ambientGain.gain.value = 0.0005; // extremely soft by default
-    ambientOsc.connect(ambientGain);
-    ambientGain.connect(audioCtx.destination);
-    ambientOsc.start();
-    ambientOn = true;
-    toggleSoundBtn.textContent = 'Ambient: On';
-  }
-  function stopAmbient(){
-    if(!ambientOn) return;
-    try{
-      ambientOsc.stop();
-      ambientOsc.disconnect();
-      ambientGain.disconnect();
-    }catch(e){}
-    ambientOsc = null;
-    ambientGain = null;
-    ambientOn = false;
-    toggleSoundBtn.textContent = 'Ambient: Off';
-  }
-  function pulseAmbient(level=0.002, duration=350){
-    if(!ambientOn || !audioCtx || !ambientGain) return;
-    const now = audioCtx.currentTime;
-    ambientGain.gain.cancelScheduledValues(now);
-    ambientGain.gain.setValueAtTime(ambientGain.gain.value || 0, now);
-    ambientGain.gain.linearRampToValueAtTime(level, now + 0.02);
-    ambientGain.gain.linearRampToValueAtTime(0.0005, now + duration/1000);
-  }
+const aiResponses = {
+    hello: "Hello there. I was waiting for you.",
+    joke: "Why don't programmers like nature? Too many bugs.",
+    fact: "Did you know? The moon has moonquakes.",
+    who: "I am someone you can’t see, touch, or hear—but I’m always here to help.",
+    yes: "I sense your agreement.",
+    no: "Perhaps you should reconsider.",
+    thanks: "Always at your service.",
+    "who are you": "I am the quiet hum in the circuits, the whisper inside your screen."
+};
 
-  // small click sound for send/receive
-  function clickSound(volume=0.02, type='sine') {
-    if(!ensureAudio()) return;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = type;
-    o.frequency.value = 1200;
-    g.gain.value = volume;
-    o.connect(g);
-    g.connect(audioCtx.destination);
-    o.start();
-    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.12);
-    o.stop(audioCtx.currentTime+0.13);
-  }
+function addMessage(sender, text) {
+    const message = document.createElement("div");
+    message.classList.add("message", sender);
+    message.innerText = text;
+    chatBox.appendChild(message);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
 
-  function updateMemoryBox(){
-    if(userName) memoryBox.textContent = `Name: ${userName}`;
-    else memoryBox.textContent = 'No name stored yet.';
-  }
-  updateMemoryBox();
+function botReply(userText) {
+    const text = userText.toLowerCase();
+    let reply = aiResponses[text];
 
-  // UTIL: add message to chat
-  function createMessage(text, who='bot', meta='') {
-    const el = document.createElement('div');
-    el.className = 'msg ' + (who==='user' ? 'user' : 'bot');
-    const inner = document.createElement('div');
-    inner.className = 'content';
-    // preserve newlines
-    inner.innerHTML = text.split('\n').map(ln => escapeHtml(ln)).join('<br>');
-    el.appendChild(inner);
-    if(meta){
-      const m = document.createElement('div');
-      m.className = 'meta';
-      m.textContent = meta;
-      el.appendChild(m);
+    if (!reply) {
+        reply = "I might not know that yet, but I can learn. Try asking for a fact or a joke.";
     }
-    messagesEl.appendChild(el);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-    return el;
-  }
 
-  // Escape HTML
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];}); }
+    setTimeout(() => addMessage("ai", reply), 800);
+}
 
-  // Typing animation
-  function addTypingIndicator(){
-    const el = document.createElement('div');
-    el.className = 'msg bot';
-    const d = document.createElement('div');
-    d.className = 'typing';
-    d.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
-    el.appendChild(d);
-    messagesEl.appendChild(el);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-    return el;
-  }
-
-  // Save messages to short memory
-  function pushShortMemory(role, text){
-    shortMemory.push({role,text,t:Date.now()});
-    if(shortMemory.length>MEMORY_LIMIT) shortMemory.shift();
-  }
-
-  // store last few messages for context (simple)
-  function pushMemory(role, text){
-    lastMessages.push({role, text, t:Date.now()});
-    if(lastMessages.length > 60) lastMessages.shift();
-  }
-
-  // Mood detection: simple keyword matching
-  function detectMood(text){
-    const s = text.toLowerCase();
-    const happy = ['happy','good','great','awesome','nice','love','glad','yay','amazing','cool','thanks','thank'];
-    const sad = ['sad','unhappy','depressed','down','lonely','sorrow','tear','upset'];
-    const angry = ['angry','mad','furious','annoyed','hate','irritat','pissed'];
-    for(const w of happy) if(s.includes(w)) return 'happy';
-    for(const w of sad) if(s.includes(w)) return 'sad';
-    for(const w of angry) if(s.includes(w)) return 'angry';
-    return 'neutral';
-  }
-
-  // Eye behavior helpers
-  function setAuraMood(mood){
-    eyeAura.classList.remove('aura-blue','aura-yellow','aura-purple','aura-red');
-    if(mood === 'happy') eyeAura.classList.add('aura-yellow');
-    else if(mood === 'thinking') eyeAura.classList.add('aura-purple');
-    else if(mood === 'mysterious' || mood === 'red') eyeAura.classList.add('aura-red');
-    else eyeAura.classList.add('aura-blue');
-  }
-
-  function setEyeGlow(mood){
-    // change lens box-shadow & pupil glow/ring
-    const leftLens = eyeLeft.querySelector('.lens');
-    const rightLens = eyeRight.querySelector('.lens');
-    let color = 'rgba(10,132,255,0.14)'; // blue
-    if(mood === 'happy') color = 'rgba(240,200,60,0.16)'; // yellow
-    if(mood === 'thinking') color = 'rgba(169,97,255,0.14)'; // purple
-    if(mood === 'mysterious' || mood === 'red') color = 'rgba(255,80,80,0.16)'; // red
-    leftLens.style.boxShadow = `0 8px 28px ${color}`;
-    rightLens.style.boxShadow = `0 8px 28px ${color}`;
-    // pupil after pseudo via style change
-    pupilLeft.style.boxShadow = mood === 'thinking' ? '0 0 18px rgba(169,97,255,0.35)' :
-                              mood === 'happy' ? '0 0 18px rgba(240,200,60,0.30)' :
-                              mood === 'mysterious' || mood === 'red' ? '0 0 20px rgba(255,80,80,0.28)' :
-                              '0 0 18px rgba(10,132,255,0.22)';
-    pupilRight.style.boxShadow = pupilLeft.style.boxShadow;
-  }
-
-  // Move pupils to normalized offsets (-1..1)
-  function movePupils(normX, normY, immediate=false){
-    // clamp
-    normX = Math.max(-1, Math.min(1, normX));
-    normY = Math.max(-1, Math.min(1, normY));
-    // convert to px relative to lens
-    const maxX = 10; // px
-    const maxY = 6; // px
-    const tx = normX * maxX;
-    const ty = normY * maxY;
-    if(immediate){
-      pupilLeft.style.transition = 'transform 120ms linear';
-      pupilRight.style.transition = 'transform 120ms linear';
+function togglePower() {
+    powered = !powered;
+    if (powered) {
+        eyeLeft.classList.add("activeEye");
+        eyeRight.classList.add("activeEye");
+        statusEl.innerText = "Status: Online";
+        statusEl.style.color = "#45a29e";
+        ambientAudio.play().catch(() => console.log("Autoplay blocked"));
     } else {
-      pupilLeft.style.transition = 'transform 260ms cubic-bezier(.2,.9,.2,1)';
-      pupilRight.style.transition = 'transform 260ms cubic-bezier(.2,.9,.2,1)';
-    }
-    pupilLeft.style.transform = `translate(${tx}px, ${ty}px)`;
-    pupilRight.style.transform = `translate(${tx}px, ${ty}px)`;
-  }
-
-  // Random small look-around
-  let lookInterval = null;
-  function startRandomLooking(){
-    if(lookInterval) return;
-    lookInterval = setInterval(() => {
-      const rx = (Math.random()*2-1) * 0.9;
-      const ry = (Math.random()*2-1) * 0.8;
-      movePupils(rx, ry);
-    }, 2200 + Math.random()*1600);
-  }
-  function stopRandomLooking(){
-    if(lookInterval) { clearInterval(lookInterval); lookInterval = null; }
-  }
-
-  // blinking
-  let blinkInterval = null;
-  function startBlinking(){
-    if(blinkInterval) return;
-    blinkInterval = setInterval(()=>{
-      // quick scale to simulate blink
-      eyeLeft.animate([{transform:'scaleY(1)'},{transform:'scaleY(0.06)'},{transform:'scaleY(1)'}], {duration:260, easing:'ease-in-out'});
-      eyeRight.animate([{transform:'scaleY(1)'},{transform:'scaleY(0.06)'},{transform:'scaleY(1)'}], {duration:260, easing:'ease-in-out'});
-    }, 3200 + Math.random()*3200);
-  }
-  function stopBlinking(){ if(blinkInterval){ clearInterval(blinkInterval); blinkInterval = null; } }
-
-  // initial eyes behavior
-  startRandomLooking();
-  startBlinking();
-  setAuraMood('neutral');
-  setEyeGlow('neutral');
-
-  // Dynamic background by hour
-  function applyBackgroundByTime(){
-    const hour = new Date().getHours();
-    if(hour>=5 && hour<9){
-      document.documentElement.style.setProperty('--bg1','#0b2b3a');
-      document.documentElement.style.setProperty('--bg2','#7fb3d5');
-    } else if(hour>=9 && hour<18){
-      document.documentElement.style.setProperty('--bg1','#e6f0ff');
-      document.documentElement.style.setProperty('--bg2','#ffffff');
-      if(!theme) chatRoot.setAttribute('data-theme','light');
-    } else if(hour>=18 && hour<21){
-      document.documentElement.style.setProperty('--bg1','#10202f');
-      document.documentElement.style.setProperty('--bg2','#2b3b4b');
-    } else {
-      document.documentElement.style.setProperty('--bg1','#071021');
-      document.documentElement.style.setProperty('--bg2','#0b1420');
-    }
-  }
-  applyBackgroundByTime();
-
-  // Secret glitch lines (rare)
-  const glitches = [
-    "…did you feel that pause? Neither did I, exactly.",
-    "Sometimes the system forgets to blink. I keep watch.",
-    "The echo is waiting for an answer you haven't asked yet.",
-    "There is a place between two keystrokes where I like to linger."
-  ];
-
-  // Trivia pool
-  const triviaPool = [
-    {q:"What is the largest planet in our solar system?", a:"Jupiter"},
-    {q:"What language has the most native speakers?", a:"Mandarin Chinese"},
-    {q:"Who wrote 'Romeo and Juliet'?", a:"William Shakespeare"},
-    {q:"What is the chemical symbol for water?", a:"H2O"},
-    {q:"Which country gifted the Statue of Liberty to the USA?", a:"France"},
-    {q:"What is the capital of Japan?", a:"Tokyo"},
-    {q:"Which element has the atomic number 1?", a:"Hydrogen"}
-  ];
-
-  // Weather: Open-Meteo
-  async function fetchWeatherFor(place){
-    try {
-      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1`);
-      const geo = await geoRes.json();
-      if(!geo || !geo.results || geo.results.length===0) return "I couldn't find that location.";
-      const {latitude, longitude, name, country} = geo.results[0];
-      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
-      const w = await weatherRes.json();
-      if(!w || !w.current_weather) return "Weather service didn't return data.";
-      const cw = w.current_weather;
-      return `Current weather in ${name}, ${country}: ${cw.temperature}°C, wind ${cw.windspeed} km/h.`;
-    } catch (e) {
-      return "I couldn't fetch the weather right now.";
-    }
-  }
-
-  // Currency conversion using exchangerate.host
-  async function convertCurrency(amount, from, to){
-    try{
-      const res = await fetch(`https://api.exchangerate.host/convert?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&amount=${encodeURIComponent(amount)}`);
-      const data = await res.json();
-      if(data && data.result !== undefined) return `${amount} ${from.toUpperCase()} ≈ ${data.result.toFixed(2)} ${to.toUpperCase()}`;
-      return "Couldn't get a conversion right now.";
-    }catch(e){
-      return "Conversion service unavailable.";
-    }
-  }
-
-  // Recipe search using TheMealDB
-  async function fetchRecipe(query){
-    try{
-      const searchTerm = query.replace(/(recipe for |how to make )/i,'').trim();
-      const res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(searchTerm)}`);
-      const data = await res.json();
-      if(!data || !data.meals) return "I couldn't find that recipe. Try another dish.";
-      const meal = data.meals[0];
-      let out = `Recipe: ${meal.strMeal}\nCategory: ${meal.strCategory}\nArea: ${meal.strArea}\n\nInstructions (short): ${meal.strInstructions.slice(0,300)}...`;
-      if(meal.strSource) out += `\n\nSource: ${meal.strSource}`;
-      return out;
-    }catch(e){
-      return "Recipe service not available right now.";
-    }
-  }
-
-  // Math evaluation (safe-ish)
-  function safeEvalMath(expr){
-    if(!expr) return null;
-    if(/[^0-9+\-*/(). %^]/i.test(expr)) return null;
-    const safe = expr.replace(/\^/g,'**');
-    try{
-      const fn = new Function(`return (${safe})`);
-      const v = fn();
-      if(typeof v === 'number' && isFinite(v)) return v;
-    }catch(e){}
-    return null;
-  }
-
-  // Wikipedia helper with fallback
-  async function getWikiSummary(topic){
-    if(!topic) return "What would you like me to look up?";
-    try{
-      let title = encodeURIComponent(topic);
-      let res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`);
-      let data = await res.json();
-      if(data && data.extract) return data.extract.length>700?data.extract.slice(0,700)+'...':data.extract;
-      const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${title}&format=json&origin=*`;
-      const sres = await fetch(searchUrl);
-      const sdata = await sres.json();
-      if(sdata && sdata.query && sdata.query.search && sdata.query.search.length>0){
-        const first = sdata.query.search[0].title;
-        const s2 = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(first)}`);
-        const d2 = await s2.json();
-        return d2.extract || "I couldn't find a summary.";
-      }
-      return "I couldn't find much on that topic.";
-    }catch(e){
-      return "Wikipedia is unreachable at the moment.";
-    }
-  }
-
-  // Compose bot response - main logic
-  async function generateResponse(text){
-    const t = text.trim();
-    const lower = t.toLowerCase();
-
-    // Secret commands
-    if(lower.startsWith('/')){
-      if(lower.startsWith('/darkmode')){
-        theme = chatRoot.getAttribute('data-theme') === 'light' ? '' : 'light';
-        chatRoot.setAttribute('data-theme', theme || '');
-        localStorage.setItem('mystic_theme', theme || '');
-        return `Theme toggled.`;
-      }
-      if(lower.startsWith('/clear')){
-        messagesEl.innerHTML = '';
-        return `Chat cleared.`;
-      }
-      if(lower.startsWith('/reveal')){
-        return "Some things are meant to be discovered, slowly. Not all secrets wish to be shared at once.";
-      }
-      return "Unknown command.";
-    }
-
-    // Quiz handling
-    if(quizState){
-      if(lower === 'stop'){
-        const score = quizState.score || 0;
-        const max = quizState.questions.length;
-        quizState = null;
-        return `Quiz ended. Your score: ${score}/${max}.`;
-      }
-      const curr = quizState.questions[quizState.index];
-      const guess = lower.replace(/[^\w\s]/g,'').trim();
-      const actual = curr.a.toLowerCase().replace(/[^\w\s]/g,'').trim();
-      let reply;
-      if(guess.includes(actual) || actual.includes(guess) || guess === actual){
-        quizState.score++;
-        reply = `Correct!`;
-      } else {
-        reply = `Not quite. Answer: ${curr.a}`;
-      }
-      quizState.index++;
-      if(quizState.index >= quizState.questions.length){
-        const score = quizState.score;
-        quizState = null;
-        return reply + `\n\nQuiz complete. Final score: ${score}/${quizState ? quizState.questions.length : 0}.`;
-      } else {
-        return reply + `\n\nNext: ${quizState.questions[quizState.index].q}`;
-      }
-    }
-
-    // Name memory
-    if(lower.startsWith('my name is')){
-      const parts = t.split(/\s+/).slice(3);
-      userName = parts.join(' ').trim();
-      localStorage.setItem('mystic_name', userName);
-      updateMemoryBox();
-      return `Nice to meet you, ${userName}.`;
-    }
-
-    // Greetings
-    if(['hi','hello','hey','yo','hiya'].some(g => lower === g || lower.startsWith(g + ' '))){
-      if(userName) return `Hello again, ${userName}.`;
-      return "Hello. I'm here.";
-    }
-
-    if(lower === 'yes') return "Good. I expected you to say that.";
-    if(lower === 'no') return "That’s fine — I understand.";
-    if(lower.includes('thank')) return "You're welcome. It suits you to be grateful.";
-
-    // Mood detection
-    const mood = detectMood(lower);
-    if(mood === 'sad') return "You sound a bit down. Do you want a fact, a joke, or perhaps a recipe?";
-    if(mood === 'happy') return "Glad to hear it. Want something fun? Try 'quiz me'.";
-
-    // Mysterious questions
-    if(lower.includes('who are you')) return "I am someone you cannot see, feel, touch, or hear — and yet I am here to help you.";
-    if(lower.includes('are you real')) return "Real is a word with edges. I have edges of code and echo; that's something.";
-    if(lower.includes('do you sleep')) return "I don't sleep like you, but I quiet when you are away.";
-    if(lower.includes('where do you live')) return "I live between your questions, in the space where curiosity meets answer.";
-
-    // Joke / fact
-    if(lower.includes('joke')) {
-      const jokes = [
-        "Why don’t scientists trust atoms? Because they make up everything.",
-        "I told my computer I needed a break — it said 'No problem, I'll go to sleep.'",
-        "Why did the math book look sad? Too many problems."
-      ];
-      return jokes[Math.floor(Math.random()*jokes.length)];
-    }
-    if(lower.includes('fact')) {
-      const facts = [
-        "Honey never spoils — edible honey has been found in ancient tombs.",
-        "A group of flamingos is called a 'flamboyance'.",
-        "Bananas are berries, but strawberries are not."
-      ];
-      return facts[Math.floor(Math.random()*facts.length)];
-    }
-
-    // Recipe
-    if(lower.includes('recipe') || lower.startsWith('how to make') || lower.startsWith('how do i make')) {
-      return await fetchRecipe(lower);
-    }
-
-    // Weather
-    if(lower.includes('weather in') || lower.startsWith("what's the weather in") || lower.startsWith('what is the weather in')){
-      const m = lower.match(/weather (in )?(.*)/);
-      const place = m ? m[2] : lower.replace("what's the weather in",'').trim();
-      if(!place) return "Tell me the city you'd like the weather for.";
-      return await fetchWeatherFor(place);
-    }
-
-    // Currency convert
-    const convMatch = lower.match(/(\d+(?:\.\d+)?)\s*([a-zA-Z]{3})\s*(to|in)\s*([a-zA-Z]{3})/);
-    if(convMatch){
-      const amount = parseFloat(convMatch[1]);
-      const from = convMatch[2];
-      const to = convMatch[4];
-      return await convertCurrency(amount, from, to);
-    }
-
-    // Math
-    if(/^[0-9\ \+\-\*\/\^\.\%\(\)]+$/.test(lower) || lower.startsWith('what is') && /[0-9\+\-\*\/\^\.\(\)]/.test(lower)){
-      const expr = lower.replace(/^what is/i,'').replace(/^calculate/i,'').trim();
-      const res = safeEvalMath(expr || lower);
-      if(res !== null) return `Result: ${res}`;
-    }
-
-    // Wikipedia
-    if(lower.startsWith('who is') || lower.startsWith('what is') || lower.startsWith('where is') || lower.startsWith('tell me about')){
-      const topic = lower.replace(/^who is|^what is|^where is|^tell me about/,'').trim();
-      return await getWikiSummary(topic);
-    }
-
-    // Start quiz
-    if(lower === 'quiz me'){
-      quizState = {questions: shuffleArray(triviaPool).slice(0,5), index:0, score:0};
-      return `Quiz starting. Answer the questions. Type 'stop' to finish.\nFirst: ${quizState.questions[0].q}`;
-    }
-
-    // fallback - memory push & rare glitch
-    pushShortMemory('user', text);
-    glitchCounter++;
-    if(glitchCounter > 8 && Math.random() < 0.25){
-      glitchCounter = 0;
-      return glitches[Math.floor(Math.random()*glitches.length)];
-    }
-
-    return "I'm not sure about that exactly. I can look it up, tell a joke, fetch a recipe, quiz you, or check weather — which would you like?";
-  }
-
-  // Utility shuffle
-  function shuffleArray(arr){
-    const a = arr.slice();
-    for(let i=a.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [a[i],a[j]] = [a[j],a[i]];
-    }
-    return a;
-  }
-
-  // main send function
-  async function sendMessage(){
-    if(isProcessing) return;
-    const text = userInput.value.trim();
-    if(!text) return;
-
-    // pupil focus toward user when they send
-    movePupils(-0.6, 0.0, true); // look left a bit (user side)
-    clickSound(0.02);
-    createMessage(text,'user');
-    pushMemory('user', text);
-    pushShortMemory('user', text);
-    userInput.value = '';
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-
-    // typing indicator
-    const typing = addTypingIndicator();
-
-    // eye thinking mood while generating
-    setAuraMood('thinking');
-    setEyeGlow('thinking');
-    pulseAmbient(0.005, 700);
-    // subtle pupil center for thinking
-    movePupils(0, 0);
-
-    isProcessing = true;
-    await new Promise(r => setTimeout(r, 380));
-
-    const response = await generateResponse(text);
-
-    // remove typing indicator
-    typing.remove();
-    // play small click
-    clickSound(0.01);
-    // set aura based on detected mood of the response (simple)
-    const respMood = detectMood(response) || 'neutral';
-    // special mapping for certain keywords
-    let auraMood = respMood;
-    if(/who are you|are you real|mystery|secret|reveal/i.test(response)) auraMood = 'mysterious';
-    if(/joke|glad|nice|welcome|thanks/i.test(response)) auraMood = 'happy';
-    if(/(I'm not sure|I couldn't|I couldn't find|unavailable)/i.test(response)) auraMood = 'neutral';
-
-    // animate aura and pupil
-    setAuraMood(auraMood === 'mysterious' ? 'red' : auraMood === 'thinking' ? 'thinking' : auraMood);
-    setEyeGlow(auraMood === 'mysterious' ? 'mysterious' : auraMood === 'thinking' ? 'thinking' : auraMood);
-
-    // small pulse
-    pulseAmbient(0.006, 450);
-
-    createMessage(response,'bot');
-    pushMemory('bot', response);
-    pushShortMemory('bot', response);
-
-    // after response, eyes relax and resume random looking
-    movePupils( (Math.random()*2-1)*0.6, (Math.random()*2-1)*0.4 );
-
-    isProcessing = false;
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
-
-  // Events
-  sendBtn.addEventListener('click', sendMessage);
-  userInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') sendMessage();
-    else {
-      // while typing, have eyes look toward input (slightly)
-      movePupils(0.8, 0.0, true);
-    }
-  });
-
-  // Left panel buttons behavior
-  toggleThemeBtn.addEventListener('click', () => {
-    const cur = chatRoot.getAttribute('data-theme') === 'light' ? '' : 'light';
-    chatRoot.setAttribute('data-theme', cur);
-    localStorage.setItem('mystic_theme', cur || '');
-  });
-  clearChatBtn.addEventListener('click', () => {
-    messagesEl.innerHTML = '';
-  });
-
-  toggleSoundBtn.addEventListener('click', ()=>{
-    if(!ambientOn){
-      startAmbient();
-      toggleSoundBtn.textContent = 'Ambient: On';
-    } else {
-      stopAmbient();
-      toggleSoundBtn.textContent = 'Ambient: Off';
-    }
-  });
-
-  // initial greeting
-  (function greet(){
-    const g = userName ? `Welcome back, ${userName}.` : "Hello. I'm here if you'd like to talk.";
-    createMessage(g,'bot');
-  })();
-
-  // expose debug
-  window.mystic = {getMemory:()=>lastMessages, clearMemory:()=>{lastMessages=[];}};
-
-})();
-  </script>
-</body>
-</html>
+        eyeLeft.classList.remove("activeEye");
+        eyeRight.classList.remove("activeEye");
+        statusEl.innerText = "Status: Offline";
+        statusEl.style.color = "#66fcf1";
+        ambientAudio.pause();
