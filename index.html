@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mystic Assistant — Advanced</title>
+  <title>Mystic Assistant — Eyes Enabled</title>
   <style>
     :root{
       --bg1: #071021;
@@ -34,7 +34,102 @@
       box-shadow: 0 10px 40px rgba(0,0,0,0.45);
       border:1px solid rgba(255,255,255,0.04);
       background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      position: relative;
     }
+
+    /* EYES CONTAINER - ABOVE CHAT */
+    .eyes-wrap {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: -70px; /* floating above */
+      display:flex;
+      gap:24px;
+      align-items:center;
+      z-index: 40;
+      pointer-events: none;
+    }
+    .eye-aura {
+      width: 260px;
+      height: 100px;
+      border-radius: 60px;
+      filter: blur(22px);
+      opacity: 0.9;
+      transition: background 450ms ease, opacity 400ms ease;
+      transform-origin: center;
+    }
+    .eyes {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: -86px;
+      display:flex;
+      gap: 28px;
+      align-items:center;
+      z-index: 50;
+      pointer-events: none;
+    }
+    .eye {
+      width: 72px;
+      height: 44px;
+      border-radius: 40px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.25));
+      box-shadow: inset 0 -6px 12px rgba(0,0,0,0.45);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.03);
+      transform-origin: center;
+    }
+    .lens {
+      width: 54px;
+      height: 30px;
+      border-radius: 30px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06), rgba(255,255,255,0.01) 10%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.6));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      transition: box-shadow 280ms ease, background 280ms ease, transform 200ms ease;
+    }
+    .pupil {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #071021;
+      position: absolute;
+      transition: transform 260ms cubic-bezier(.2,.9,.2,1), background 260ms ease, box-shadow 260ms ease;
+      box-shadow: 0 0 18px rgba(0,0,0,0.6), inset 0 -2px 6px rgba(255,255,255,0.02);
+      left: calc(50% - 7px);
+      top: calc(50% - 7px);
+      transform: translate(0,0);
+    }
+
+    /* pupil highlight ring (cyber lens look) */
+    .pupil::after {
+      content: '';
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%,-50%);
+      pointer-events: none;
+      box-shadow: 0 0 18px rgba(0,0,0,0.25);
+      transition: box-shadow 280ms ease, opacity 280ms;
+      opacity: 0;
+    }
+
+    /* aura color classes (controlled via JS setting background) */
+    .aura-blue { background: radial-gradient(ellipse at center, rgba(10,132,255,0.18), rgba(10,132,255,0.06)); }
+    .aura-yellow { background: radial-gradient(ellipse at center, rgba(240,200,60,0.22), rgba(240,200,60,0.06)); }
+    .aura-purple { background: radial-gradient(ellipse at center, rgba(169,97,255,0.18), rgba(169,97,255,0.06)); }
+    .aura-red { background: radial-gradient(ellipse at center, rgba(255,80,80,0.18), rgba(255,80,80,0.06)); }
+
+    /* rest of UI */
     .left {
       width: 320px;
       min-width:240px;
@@ -92,18 +187,33 @@
     @media (max-width:800px){
       .left{display:none}
       .chat{width:100%}
+      .eyes-wrap{top:-52px; transform: translateX(-50%) scale(0.86)}
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="chat" id="chatRoot" data-theme="">
+      <!-- EYES AURA AND EYES -->
+      <div class="eyes-wrap" aria-hidden="true">
+        <div id="eyeAura" class="eye-aura aura-blue"></div>
+        <div class="eyes" id="eyes">
+          <div class="eye" id="eyeLeft">
+            <div class="lens"><div class="pupil" id="pupilLeft"></div></div>
+          </div>
+          <div class="eye" id="eyeRight">
+            <div class="lens"><div class="pupil" id="pupilRight"></div></div>
+          </div>
+        </div>
+      </div>
+
       <div class="left">
         <div class="brand"><div class="dot"></div><div>Mystic Assistant</div></div>
         <div class="small">A quiet companion — helpful, curious, and a little mysterious.</div>
         <div class="controls">
           <button class="btn" id="toggleTheme">Toggle Theme</button>
           <button class="btn" id="clearChat">Clear Chat</button>
+          <button class="btn" id="toggleSound">Ambient: Off</button>
         </div>
         <div class="mem">
           <div style="font-weight:600">Memory</div>
@@ -132,8 +242,10 @@
 
   <script>
 /* ---------------------------
-  Advanced Mystic Assistant
-  - Single file with many features
+  Mystic Assistant + Cyber Eyes
+  - Integrated into your existing assistant
+  - Eyes: random pupil movement, blinking, aura color by mood
+  - Ambient hum toggle
   --------------------------- */
 
 (async function(){
@@ -145,6 +257,14 @@
   const chatRoot = document.getElementById('chatRoot');
   const toggleThemeBtn = document.getElementById('toggleTheme');
   const clearChatBtn = document.getElementById('clearChat');
+  const toggleSoundBtn = document.getElementById('toggleSound');
+
+  // Eye elements
+  const eyeAura = document.getElementById('eyeAura');
+  const pupilLeft = document.getElementById('pupilLeft');
+  const pupilRight = document.getElementById('pupilRight');
+  const eyeLeft = document.getElementById('eyeLeft');
+  const eyeRight = document.getElementById('eyeRight');
 
   // State
   let userName = localStorage.getItem('mystic_name') || '';
@@ -155,17 +275,57 @@
   let quizState = null; // {questions, index, score}
   let lastMessages = []; // message history for "context"
   let glitchCounter = 0;
+  let isProcessing = false;
 
-  function updateMemoryBox(){
-    if(userName) memoryBox.textContent = `Name: ${userName}`;
-    else memoryBox.textContent = 'No name stored yet.';
+  // Ambient sound (WebAudio) setup
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx = null;
+  let ambientOsc = null;
+  let ambientGain = null;
+  let ambientOn = false;
+  function ensureAudio(){
+    if(!AudioCtx) return false;
+    if(!audioCtx) audioCtx = new AudioCtx();
+    return true;
   }
-  updateMemoryBox();
+  function startAmbient(){
+    if(!ensureAudio()) return;
+    if(ambientOn) return;
+    ambientOsc = audioCtx.createOscillator();
+    ambientGain = audioCtx.createGain();
+    ambientOsc.type = 'sine';
+    ambientOsc.frequency.value = 80; // low hum
+    ambientGain.gain.value = 0.0005; // extremely soft by default
+    ambientOsc.connect(ambientGain);
+    ambientGain.connect(audioCtx.destination);
+    ambientOsc.start();
+    ambientOn = true;
+    toggleSoundBtn.textContent = 'Ambient: On';
+  }
+  function stopAmbient(){
+    if(!ambientOn) return;
+    try{
+      ambientOsc.stop();
+      ambientOsc.disconnect();
+      ambientGain.disconnect();
+    }catch(e){}
+    ambientOsc = null;
+    ambientGain = null;
+    ambientOn = false;
+    toggleSoundBtn.textContent = 'Ambient: Off';
+  }
+  function pulseAmbient(level=0.002, duration=350){
+    if(!ambientOn || !audioCtx || !ambientGain) return;
+    const now = audioCtx.currentTime;
+    ambientGain.gain.cancelScheduledValues(now);
+    ambientGain.gain.setValueAtTime(ambientGain.gain.value || 0, now);
+    ambientGain.gain.linearRampToValueAtTime(level, now + 0.02);
+    ambientGain.gain.linearRampToValueAtTime(0.0005, now + duration/1000);
+  }
 
-  // WebAudio click sound generator for typing/clicks
-  const audioCtx = typeof AudioContext !== 'undefined' ? new AudioContext() : null;
-  function clickSound(volume=0.03, type='sine') {
-    if(!audioCtx) return;
+  // small click sound for send/receive
+  function clickSound(volume=0.02, type='sine') {
+    if(!ensureAudio()) return;
     const o = audioCtx.createOscillator();
     const g = audioCtx.createGain();
     o.type = type;
@@ -177,6 +337,12 @@
     g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.12);
     o.stop(audioCtx.currentTime+0.13);
   }
+
+  function updateMemoryBox(){
+    if(userName) memoryBox.textContent = `Name: ${userName}`;
+    else memoryBox.textContent = 'No name stored yet.';
+  }
+  updateMemoryBox();
 
   // UTIL: add message to chat
   function createMessage(text, who='bot', meta='') {
@@ -215,15 +381,21 @@
   }
 
   // Save messages to short memory
-  function pushMemory(role, text){
+  function pushShortMemory(role, text){
     shortMemory.push({role,text,t:Date.now()});
     if(shortMemory.length>MEMORY_LIMIT) shortMemory.shift();
+  }
+
+  // store last few messages for context (simple)
+  function pushMemory(role, text){
+    lastMessages.push({role, text, t:Date.now()});
+    if(lastMessages.length > 60) lastMessages.shift();
   }
 
   // Mood detection: simple keyword matching
   function detectMood(text){
     const s = text.toLowerCase();
-    const happy = ['happy','good','great','awesome','nice','love','glad','yay','amazing','cool'];
+    const happy = ['happy','good','great','awesome','nice','love','glad','yay','amazing','cool','thanks','thank'];
     const sad = ['sad','unhappy','depressed','down','lonely','sorrow','tear','upset'];
     const angry = ['angry','mad','furious','annoyed','hate','irritat','pissed'];
     for(const w of happy) if(s.includes(w)) return 'happy';
@@ -232,10 +404,89 @@
     return 'neutral';
   }
 
+  // Eye behavior helpers
+  function setAuraMood(mood){
+    eyeAura.classList.remove('aura-blue','aura-yellow','aura-purple','aura-red');
+    if(mood === 'happy') eyeAura.classList.add('aura-yellow');
+    else if(mood === 'thinking') eyeAura.classList.add('aura-purple');
+    else if(mood === 'mysterious' || mood === 'red') eyeAura.classList.add('aura-red');
+    else eyeAura.classList.add('aura-blue');
+  }
+
+  function setEyeGlow(mood){
+    // change lens box-shadow & pupil glow/ring
+    const leftLens = eyeLeft.querySelector('.lens');
+    const rightLens = eyeRight.querySelector('.lens');
+    let color = 'rgba(10,132,255,0.14)'; // blue
+    if(mood === 'happy') color = 'rgba(240,200,60,0.16)'; // yellow
+    if(mood === 'thinking') color = 'rgba(169,97,255,0.14)'; // purple
+    if(mood === 'mysterious' || mood === 'red') color = 'rgba(255,80,80,0.16)'; // red
+    leftLens.style.boxShadow = `0 8px 28px ${color}`;
+    rightLens.style.boxShadow = `0 8px 28px ${color}`;
+    // pupil after pseudo via style change
+    pupilLeft.style.boxShadow = mood === 'thinking' ? '0 0 18px rgba(169,97,255,0.35)' :
+                              mood === 'happy' ? '0 0 18px rgba(240,200,60,0.30)' :
+                              mood === 'mysterious' || mood === 'red' ? '0 0 20px rgba(255,80,80,0.28)' :
+                              '0 0 18px rgba(10,132,255,0.22)';
+    pupilRight.style.boxShadow = pupilLeft.style.boxShadow;
+  }
+
+  // Move pupils to normalized offsets (-1..1)
+  function movePupils(normX, normY, immediate=false){
+    // clamp
+    normX = Math.max(-1, Math.min(1, normX));
+    normY = Math.max(-1, Math.min(1, normY));
+    // convert to px relative to lens
+    const maxX = 10; // px
+    const maxY = 6; // px
+    const tx = normX * maxX;
+    const ty = normY * maxY;
+    if(immediate){
+      pupilLeft.style.transition = 'transform 120ms linear';
+      pupilRight.style.transition = 'transform 120ms linear';
+    } else {
+      pupilLeft.style.transition = 'transform 260ms cubic-bezier(.2,.9,.2,1)';
+      pupilRight.style.transition = 'transform 260ms cubic-bezier(.2,.9,.2,1)';
+    }
+    pupilLeft.style.transform = `translate(${tx}px, ${ty}px)`;
+    pupilRight.style.transform = `translate(${tx}px, ${ty}px)`;
+  }
+
+  // Random small look-around
+  let lookInterval = null;
+  function startRandomLooking(){
+    if(lookInterval) return;
+    lookInterval = setInterval(() => {
+      const rx = (Math.random()*2-1) * 0.9;
+      const ry = (Math.random()*2-1) * 0.8;
+      movePupils(rx, ry);
+    }, 2200 + Math.random()*1600);
+  }
+  function stopRandomLooking(){
+    if(lookInterval) { clearInterval(lookInterval); lookInterval = null; }
+  }
+
+  // blinking
+  let blinkInterval = null;
+  function startBlinking(){
+    if(blinkInterval) return;
+    blinkInterval = setInterval(()=>{
+      // quick scale to simulate blink
+      eyeLeft.animate([{transform:'scaleY(1)'},{transform:'scaleY(0.06)'},{transform:'scaleY(1)'}], {duration:260, easing:'ease-in-out'});
+      eyeRight.animate([{transform:'scaleY(1)'},{transform:'scaleY(0.06)'},{transform:'scaleY(1)'}], {duration:260, easing:'ease-in-out'});
+    }, 3200 + Math.random()*3200);
+  }
+  function stopBlinking(){ if(blinkInterval){ clearInterval(blinkInterval); blinkInterval = null; } }
+
+  // initial eyes behavior
+  startRandomLooking();
+  startBlinking();
+  setAuraMood('neutral');
+  setEyeGlow('neutral');
+
   // Dynamic background by hour
   function applyBackgroundByTime(){
     const hour = new Date().getHours();
-    // dawn 5-8, day 9-17, dusk 18-20, night else
     if(hour>=5 && hour<9){
       document.documentElement.style.setProperty('--bg1','#0b2b3a');
       document.documentElement.style.setProperty('--bg2','#7fb3d5');
@@ -261,7 +512,7 @@
     "There is a place between two keystrokes where I like to linger."
   ];
 
-  // Trivia game
+  // Trivia pool
   const triviaPool = [
     {q:"What is the largest planet in our solar system?", a:"Jupiter"},
     {q:"What language has the most native speakers?", a:"Mandarin Chinese"},
@@ -272,7 +523,7 @@
     {q:"Which element has the atomic number 1?", a:"Hydrogen"}
   ];
 
-  // Weather: use Open-Meteo geocoding + forecast (no API key)
+  // Weather: Open-Meteo
   async function fetchWeatherFor(place){
     try {
       const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1`);
@@ -283,13 +534,13 @@
       const w = await weatherRes.json();
       if(!w || !w.current_weather) return "Weather service didn't return data.";
       const cw = w.current_weather;
-      return `Current weather in ${name}, ${country}: ${cw.temperature}°C, wind ${cw.windspeed} km/h (weather code ${cw.weathercode}).`;
+      return `Current weather in ${name}, ${country}: ${cw.temperature}°C, wind ${cw.windspeed} km/h.`;
     } catch (e) {
       return "I couldn't fetch the weather right now.";
     }
   }
 
-  // Currency conversion using exchangerate.host (no key)
+  // Currency conversion using exchangerate.host
   async function convertCurrency(amount, from, to){
     try{
       const res = await fetch(`https://api.exchangerate.host/convert?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&amount=${encodeURIComponent(amount)}`);
@@ -309,7 +560,6 @@
       const data = await res.json();
       if(!data || !data.meals) return "I couldn't find that recipe. Try another dish.";
       const meal = data.meals[0];
-      // Build mild summary
       let out = `Recipe: ${meal.strMeal}\nCategory: ${meal.strCategory}\nArea: ${meal.strArea}\n\nInstructions (short): ${meal.strInstructions.slice(0,300)}...`;
       if(meal.strSource) out += `\n\nSource: ${meal.strSource}`;
       return out;
@@ -318,15 +568,12 @@
     }
   }
 
-  // Math evaluation (safe-ish): allow digits, spaces, parentheses, + - * / % . ^
+  // Math evaluation (safe-ish)
   function safeEvalMath(expr){
     if(!expr) return null;
-    // remove invalid chars
     if(/[^0-9+\-*/(). %^]/i.test(expr)) return null;
-    // Replace ^ with **
     const safe = expr.replace(/\^/g,'**');
     try{
-      // eslint-disable-next-line no-new-func
       const fn = new Function(`return (${safe})`);
       const v = fn();
       if(typeof v === 'number' && isFinite(v)) return v;
@@ -334,7 +581,7 @@
     return null;
   }
 
-  // Small helper: answer from wikipedia (with fallback search)
+  // Wikipedia helper with fallback
   async function getWikiSummary(topic){
     if(!topic) return "What would you like me to look up?";
     try{
@@ -342,7 +589,6 @@
       let res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`);
       let data = await res.json();
       if(data && data.extract) return data.extract.length>700?data.extract.slice(0,700)+'...':data.extract;
-      // fallback search
       const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${title}&format=json&origin=*`;
       const sres = await fetch(searchUrl);
       const sdata = await sres.json();
@@ -363,10 +609,9 @@
     const t = text.trim();
     const lower = t.toLowerCase();
 
-    // Secret commands start with '/'
+    // Secret commands
     if(lower.startsWith('/')){
       if(lower.startsWith('/darkmode')){
-        // toggle theme
         theme = chatRoot.getAttribute('data-theme') === 'light' ? '' : 'light';
         chatRoot.setAttribute('data-theme', theme || '');
         localStorage.setItem('mystic_theme', theme || '');
@@ -382,7 +627,7 @@
       return "Unknown command.";
     }
 
-    // Quiz mode handling
+    // Quiz handling
     if(quizState){
       if(lower === 'stop'){
         const score = quizState.score || 0;
@@ -390,7 +635,6 @@
         quizState = null;
         return `Quiz ended. Your score: ${score}/${max}.`;
       }
-      // evaluate answer for current question
       const curr = quizState.questions[quizState.index];
       const guess = lower.replace(/[^\w\s]/g,'').trim();
       const actual = curr.a.toLowerCase().replace(/[^\w\s]/g,'').trim();
@@ -420,7 +664,7 @@
       return `Nice to meet you, ${userName}.`;
     }
 
-    // Simple greetings / short replies
+    // Greetings
     if(['hi','hello','hey','yo','hiya'].some(g => lower === g || lower.startsWith(g + ' '))){
       if(userName) return `Hello again, ${userName}.`;
       return "Hello. I'm here.";
@@ -430,7 +674,7 @@
     if(lower === 'no') return "That’s fine — I understand.";
     if(lower.includes('thank')) return "You're welcome. It suits you to be grateful.";
 
-    // Mood detection: respond
+    // Mood detection
     const mood = detectMood(lower);
     if(mood === 'sad') return "You sound a bit down. Do you want a fact, a joke, or perhaps a recipe?";
     if(mood === 'happy') return "Glad to hear it. Want something fun? Try 'quiz me'.";
@@ -459,21 +703,20 @@
       return facts[Math.floor(Math.random()*facts.length)];
     }
 
-    // Recipe detection
+    // Recipe
     if(lower.includes('recipe') || lower.startsWith('how to make') || lower.startsWith('how do i make')) {
       return await fetchRecipe(lower);
     }
 
-    // Weather detection: "weather in X" or "what's the weather in X"
+    // Weather
     if(lower.includes('weather in') || lower.startsWith("what's the weather in") || lower.startsWith('what is the weather in')){
-      // extract place name roughly
       const m = lower.match(/weather (in )?(.*)/);
       const place = m ? m[2] : lower.replace("what's the weather in",'').trim();
       if(!place) return "Tell me the city you'd like the weather for.";
       return await fetchWeatherFor(place);
     }
 
-    // Currency convert like "convert 10 usd to pkr" or "10 USD to PKR"
+    // Currency convert
     const convMatch = lower.match(/(\d+(?:\.\d+)?)\s*([a-zA-Z]{3})\s*(to|in)\s*([a-zA-Z]{3})/);
     if(convMatch){
       const amount = parseFloat(convMatch[1]);
@@ -482,15 +725,14 @@
       return await convertCurrency(amount, from, to);
     }
 
-    // Math like "what is 12 * (3+4)" or "calculate 5^3"
+    // Math
     if(/^[0-9\ \+\-\*\/\^\.\%\(\)]+$/.test(lower) || lower.startsWith('what is') && /[0-9\+\-\*\/\^\.\(\)]/.test(lower)){
-      // extract expression
       const expr = lower.replace(/^what is/i,'').replace(/^calculate/i,'').trim();
       const res = safeEvalMath(expr || lower);
       if(res !== null) return `Result: ${res}`;
     }
 
-    // Wikipedia queries
+    // Wikipedia
     if(lower.startsWith('who is') || lower.startsWith('what is') || lower.startsWith('where is') || lower.startsWith('tell me about')){
       const topic = lower.replace(/^who is|^what is|^where is|^tell me about/,'').trim();
       return await getWikiSummary(topic);
@@ -502,16 +744,14 @@
       return `Quiz starting. Answer the questions. Type 'stop' to finish.\nFirst: ${quizState.questions[0].q}`;
     }
 
-    // If none matched: short contextual reply using memory
-    pushMemory('user', text);
-    // occasionally produce a subtle glitch (rare)
+    // fallback - memory push & rare glitch
+    pushShortMemory('user', text);
     glitchCounter++;
     if(glitchCounter > 8 && Math.random() < 0.25){
       glitchCounter = 0;
       return glitches[Math.floor(Math.random()*glitches.length)];
     }
 
-    // fallback gentle reply
     return "I'm not sure about that exactly. I can look it up, tell a joke, fetch a recipe, quiz you, or check weather — which would you like?";
   }
 
@@ -526,44 +766,76 @@
   }
 
   // main send function
-  let isProcessing = false;
   async function sendMessage(){
     if(isProcessing) return;
     const text = userInput.value.trim();
     if(!text) return;
-    // play click
+
+    // pupil focus toward user when they send
+    movePupils(-0.6, 0.0, true); // look left a bit (user side)
     clickSound(0.02);
     createMessage(text,'user');
     pushMemory('user', text);
+    pushShortMemory('user', text);
     userInput.value = '';
     messagesEl.scrollTop = messagesEl.scrollHeight;
 
     // typing indicator
     const typing = addTypingIndicator();
 
+    // eye thinking mood while generating
+    setAuraMood('thinking');
+    setEyeGlow('thinking');
+    pulseAmbient(0.005, 700);
+    // subtle pupil center for thinking
+    movePupils(0, 0);
+
     isProcessing = true;
-    // small delay to feel natural
-    await new Promise(r => setTimeout(r, 350));
+    await new Promise(r => setTimeout(r, 380));
 
     const response = await generateResponse(text);
 
-    // remove typing indicator, play small clicks
+    // remove typing indicator
     typing.remove();
+    // play small click
     clickSound(0.01);
+    // set aura based on detected mood of the response (simple)
+    const respMood = detectMood(response) || 'neutral';
+    // special mapping for certain keywords
+    let auraMood = respMood;
+    if(/who are you|are you real|mystery|secret|reveal/i.test(response)) auraMood = 'mysterious';
+    if(/joke|glad|nice|welcome|thanks/i.test(response)) auraMood = 'happy';
+    if(/(I'm not sure|I couldn't|I couldn't find|unavailable)/i.test(response)) auraMood = 'neutral';
+
+    // animate aura and pupil
+    setAuraMood(auraMood === 'mysterious' ? 'red' : auraMood === 'thinking' ? 'thinking' : auraMood);
+    setEyeGlow(auraMood === 'mysterious' ? 'mysterious' : auraMood === 'thinking' ? 'thinking' : auraMood);
+
+    // small pulse
+    pulseAmbient(0.006, 450);
+
     createMessage(response,'bot');
     pushMemory('bot', response);
+    pushShortMemory('bot', response);
+
+    // after response, eyes relax and resume random looking
+    movePupils( (Math.random()*2-1)*0.6, (Math.random()*2-1)*0.4 );
 
     isProcessing = false;
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  // Event listeners
+  // Events
   sendBtn.addEventListener('click', sendMessage);
   userInput.addEventListener('keydown', (e) => {
     if(e.key === 'Enter') sendMessage();
+    else {
+      // while typing, have eyes look toward input (slightly)
+      movePupils(0.8, 0.0, true);
+    }
   });
 
-  // Left panel buttons
+  // Left panel buttons behavior
   toggleThemeBtn.addEventListener('click', () => {
     const cur = chatRoot.getAttribute('data-theme') === 'light' ? '' : 'light';
     chatRoot.setAttribute('data-theme', cur);
@@ -573,19 +845,23 @@
     messagesEl.innerHTML = '';
   });
 
+  toggleSoundBtn.addEventListener('click', ()=>{
+    if(!ambientOn){
+      startAmbient();
+      toggleSoundBtn.textContent = 'Ambient: On';
+    } else {
+      stopAmbient();
+      toggleSoundBtn.textContent = 'Ambient: Off';
+    }
+  });
+
   // initial greeting
   (function greet(){
     const g = userName ? `Welcome back, ${userName}.` : "Hello. I'm here if you'd like to talk.";
     createMessage(g,'bot');
   })();
 
-  // store last few messages for context (simple)
-  function pushMemory(role, text){
-    lastMessages.push({role, text, t:Date.now()});
-    if(lastMessages.length > 30) lastMessages.shift();
-  }
-
-  // Expose small debug to window (optional)
+  // expose debug
   window.mystic = {getMemory:()=>lastMessages, clearMemory:()=>{lastMessages=[];}};
 
 })();
