@@ -1,274 +1,594 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mysterious Chat Assistant</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mystic Assistant — Advanced</title>
   <style>
-    body {
-      background-color: #0c0c0f;
-      color: #e0e0e0;
-      font-family: 'Courier New', monospace;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
+    :root{
+      --bg1: #071021;
+      --bg2: #101523;
+      --accent: #0a84ff;
+      --bot-bg: rgba(255,255,255,0.03);
+      --text: #e6eef8;
+      --muted: #b8c6d8;
     }
-    .chat-container {
-      width: 95%;
-      max-width: 750px;
-      height: 85vh;
-      background: rgba(30,30,40,0.9);
-      border: 2px solid #444;
+    [data-theme="light"]{
+      --bg1:#e8f0ff;
+      --bg2:#ffffff;
+      --accent:#0a64ff;
+      --bot-bg: rgba(10,10,10,0.03);
+      --text:#0b1220;
+      --muted:#4a5868;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family: Inter, "Segoe UI", system-ui, Arial, sans-serif;background: linear-gradient(135deg,var(--bg1),var(--bg2));color:var(--text)}
+    .wrap{display:flex;align-items:center;justify-content:center;height:100%;padding:18px}
+    .chat {
+      width: min(1100px, 96%);
+      height: 88vh;
       border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.6);
-      display: flex;
-      flex-direction: column;
       overflow: hidden;
+      display:flex;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.45);
+      border:1px solid rgba(255,255,255,0.04);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
     }
+    .left {
+      width: 320px;
+      min-width:240px;
+      padding:18px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(255,255,255,0.01));
+      backdrop-filter: blur(4px);
+      border-right:1px solid rgba(255,255,255,0.02);
+      display:flex;flex-direction:column;gap:12px;
+    }
+    .brand {font-weight:700; font-size:18px; letter-spacing:0.4px; display:flex;align-items:center;gap:8px}
+    .brand .dot{width:12px;height:12px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px var(--accent)}
+    .small{font-size:13px;color:var(--muted)}
+    .btn {background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
+    .controls {display:flex;flex-direction:column;gap:8px}
+    .mem {font-size:13px;color:var(--muted);padding:8px;border-radius:8px;background:rgba(255,255,255,0.01)}
+    .right {flex:1;display:flex;flex-direction:column}
+    .chatHeader {display:flex;justify-content:space-between;align-items:center;padding:18px;border-bottom:1px solid rgba(255,255,255,0.02)}
+    .title {font-weight:600}
     .messages {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      scroll-behavior: smooth;
+      flex:1; padding:18px; overflow-y:auto; scroll-behavior: smooth; display:flex;flex-direction:column;gap:12px;
+      background:
+        radial-gradient(800px 300px at 5% 10%, rgba(10,132,255,0.02), transparent 10%),
+        radial-gradient(600px 200px at 95% 85%, rgba(255,255,255,0.01), transparent 10%);
     }
-    .message {
-      margin-bottom: 14px;
-      padding: 10px 14px;
-      border-radius: 8px;
-      max-width: 80%;
-      line-height: 1.4;
-      word-wrap: break-word;
+
+    .msg {max-width:80%; padding:12px 14px;border-radius:10px;line-height:1.45; word-break:break-word; opacity:0; transform:translateY(6px); animation:fadeInUp .28s forwards}
+    @keyframes fadeInUp{to{opacity:1;transform:none}}
+
+    .user {margin-left:auto;background:linear-gradient(180deg,var(--accent),#006be6); color:white; box-shadow:0 6px 18px rgba(10,132,255,0.12)}
+    .bot {background:var(--bot-bg); color:var(--text); border:1px solid rgba(255,255,255,0.02); box-shadow:0 6px 18px rgba(0,0,0,0.25)}
+    .meta {font-size:12px;color:var(--muted);margin-top:6px}
+
+    /* neon fade for bot content (subtle) */
+    .bot .content { animation:neon .7s; }
+    @keyframes neon {
+      from { text-shadow:0 0 0 rgba(10,132,255,0); }
+      60% { text-shadow:0 0 8px rgba(10,132,255,0.06); }
+      to { text-shadow:0 0 2px rgba(10,132,255,0.02); }
     }
-    .user {
-      background: #0a84ff;
-      color: white;
-      align-self: flex-end;
-    }
-    .bot {
-      background: #1e1e28;
-      border: 1px solid #333;
-      color: #c7c7c7;
-      align-self: flex-start;
-    }
-    .input-container {
-      display: flex;
-      border-top: 1px solid #333;
-    }
-    input {
-      flex: 1;
-      background: #151518;
-      color: #ddd;
-      border: none;
-      padding: 12px;
-      font-size: 16px;
-      outline: none;
-    }
-    button {
-      background: #0a84ff;
-      border: none;
-      color: white;
-      padding: 12px 16px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background: #006be6;
-    }
-    .typing {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
-    .dot {
-      width: 6px;
-      height: 6px;
-      background-color: #ccc;
-      border-radius: 50%;
-      animation: blink 1.4s infinite;
-    }
-    .dot:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-    .dot:nth-child(3) {
-      animation-delay: 0.4s;
-    }
-    @keyframes blink {
-      0%, 80%, 100% { opacity: 0.2; }
-      40% { opacity: 1; }
+
+    .inputBar {display:flex;gap:8px;padding:14px;border-top:1px solid rgba(255,255,255,0.02);align-items:center}
+    .inputBox {flex:1;display:flex;gap:8px;align-items:center}
+    input[type="text"]{flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:rgba(0,0,0,0.12);color:var(--text);outline:none;font-size:15px}
+    .sendBtn{background:var(--accent);border:none;padding:12px 16px;border-radius:10px;color:white;cursor:pointer}
+    .smallBtn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
+    .typing {display:flex;gap:6px;align-items:center}
+    .dot{width:7px;height:7px;background:#9fbffb;border-radius:50%;opacity:.25; animation:blink 1.4s infinite}
+    .dot:nth-child(2){animation-delay:0.18s}
+    .dot:nth-child(3){animation-delay:0.34s}
+    @keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+    .hint {font-size:13px;color:var(--muted);margin-top:6px}
+
+    /* responsive */
+    @media (max-width:800px){
+      .left{display:none}
+      .chat{width:100%}
     }
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="messages" id="chat"></div>
-    <div class="input-container">
-      <input type="text" id="userInput" placeholder="Type something..." />
-      <button id="sendBtn">Send</button>
+  <div class="wrap">
+    <div class="chat" id="chatRoot" data-theme="">
+      <div class="left">
+        <div class="brand"><div class="dot"></div><div>Mystic Assistant</div></div>
+        <div class="small">A quiet companion — helpful, curious, and a little mysterious.</div>
+        <div class="controls">
+          <button class="btn" id="toggleTheme">Toggle Theme</button>
+          <button class="btn" id="clearChat">Clear Chat</button>
+        </div>
+        <div class="mem">
+          <div style="font-weight:600">Memory</div>
+          <div id="memoryBox" class="small" style="margin-top:8px">No name stored yet.</div>
+        </div>
+        <div style="margin-top:auto;font-size:12px;color:var(--muted)">Tip: try "quiz me", "what's the weather in Paris", "my name is ...", "convert 10 USD to PKR".</div>
+      </div>
+
+      <div class="right">
+        <div class="chatHeader">
+          <div class="title">Mystic Assistant</div>
+          <div class="small">Connected — offline features + free APIs</div>
+        </div>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="inputBar">
+          <div class="inputBox">
+            <input id="userInput" type="text" placeholder="Ask me something..." autocomplete="off" />
+            <div id="sendBtn" class="sendBtn">Send</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    const chat = document.getElementById("chat");
-    const userInput = document.getElementById("userInput");
-    const sendBtn = document.getElementById("sendBtn");
+/* ---------------------------
+  Advanced Mystic Assistant
+  - Single file with many features
+  --------------------------- */
 
-    let userName = "";
+(async function(){
+  // Elements
+  const messagesEl = document.getElementById('messages');
+  const userInput = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const memoryBox = document.getElementById('memoryBox');
+  const chatRoot = document.getElementById('chatRoot');
+  const toggleThemeBtn = document.getElementById('toggleTheme');
+  const clearChatBtn = document.getElementById('clearChat');
 
-    function addMessage(text, sender) {
-      const msg = document.createElement("div");
-      msg.className = "message " + sender;
-      msg.textContent = text;
-      chat.appendChild(msg);
-      chat.scrollTop = chat.scrollHeight;
+  // State
+  let userName = localStorage.getItem('mystic_name') || '';
+  let theme = localStorage.getItem('mystic_theme') || ''; // '' = dark, 'light'
+  if(theme) chatRoot.setAttribute('data-theme', theme);
+  let shortMemory = []; // last few messages for context
+  const MEMORY_LIMIT = 12;
+  let quizState = null; // {questions, index, score}
+  let lastMessages = []; // message history for "context"
+  let glitchCounter = 0;
+
+  function updateMemoryBox(){
+    if(userName) memoryBox.textContent = `Name: ${userName}`;
+    else memoryBox.textContent = 'No name stored yet.';
+  }
+  updateMemoryBox();
+
+  // WebAudio click sound generator for typing/clicks
+  const audioCtx = typeof AudioContext !== 'undefined' ? new AudioContext() : null;
+  function clickSound(volume=0.03, type='sine') {
+    if(!audioCtx) return;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.value = 1200;
+    g.gain.value = volume;
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.12);
+    o.stop(audioCtx.currentTime+0.13);
+  }
+
+  // UTIL: add message to chat
+  function createMessage(text, who='bot', meta='') {
+    const el = document.createElement('div');
+    el.className = 'msg ' + (who==='user' ? 'user' : 'bot');
+    const inner = document.createElement('div');
+    inner.className = 'content';
+    // preserve newlines
+    inner.innerHTML = text.split('\n').map(ln => escapeHtml(ln)).join('<br>');
+    el.appendChild(inner);
+    if(meta){
+      const m = document.createElement('div');
+      m.className = 'meta';
+      m.textContent = meta;
+      el.appendChild(m);
+    }
+    messagesEl.appendChild(el);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return el;
+  }
+
+  // Escape HTML
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];}); }
+
+  // Typing animation
+  function addTypingIndicator(){
+    const el = document.createElement('div');
+    el.className = 'msg bot';
+    const d = document.createElement('div');
+    d.className = 'typing';
+    d.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    el.appendChild(d);
+    messagesEl.appendChild(el);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return el;
+  }
+
+  // Save messages to short memory
+  function pushMemory(role, text){
+    shortMemory.push({role,text,t:Date.now()});
+    if(shortMemory.length>MEMORY_LIMIT) shortMemory.shift();
+  }
+
+  // Mood detection: simple keyword matching
+  function detectMood(text){
+    const s = text.toLowerCase();
+    const happy = ['happy','good','great','awesome','nice','love','glad','yay','amazing','cool'];
+    const sad = ['sad','unhappy','depressed','down','lonely','sorrow','tear','upset'];
+    const angry = ['angry','mad','furious','annoyed','hate','irritat','pissed'];
+    for(const w of happy) if(s.includes(w)) return 'happy';
+    for(const w of sad) if(s.includes(w)) return 'sad';
+    for(const w of angry) if(s.includes(w)) return 'angry';
+    return 'neutral';
+  }
+
+  // Dynamic background by hour
+  function applyBackgroundByTime(){
+    const hour = new Date().getHours();
+    // dawn 5-8, day 9-17, dusk 18-20, night else
+    if(hour>=5 && hour<9){
+      document.documentElement.style.setProperty('--bg1','#0b2b3a');
+      document.documentElement.style.setProperty('--bg2','#7fb3d5');
+    } else if(hour>=9 && hour<18){
+      document.documentElement.style.setProperty('--bg1','#e6f0ff');
+      document.documentElement.style.setProperty('--bg2','#ffffff');
+      if(!theme) chatRoot.setAttribute('data-theme','light');
+    } else if(hour>=18 && hour<21){
+      document.documentElement.style.setProperty('--bg1','#10202f');
+      document.documentElement.style.setProperty('--bg2','#2b3b4b');
+    } else {
+      document.documentElement.style.setProperty('--bg1','#071021');
+      document.documentElement.style.setProperty('--bg2','#0b1420');
+    }
+  }
+  applyBackgroundByTime();
+
+  // Secret glitch lines (rare)
+  const glitches = [
+    "…did you feel that pause? Neither did I, exactly.",
+    "Sometimes the system forgets to blink. I keep watch.",
+    "The echo is waiting for an answer you haven't asked yet.",
+    "There is a place between two keystrokes where I like to linger."
+  ];
+
+  // Trivia game
+  const triviaPool = [
+    {q:"What is the largest planet in our solar system?", a:"Jupiter"},
+    {q:"What language has the most native speakers?", a:"Mandarin Chinese"},
+    {q:"Who wrote 'Romeo and Juliet'?", a:"William Shakespeare"},
+    {q:"What is the chemical symbol for water?", a:"H2O"},
+    {q:"Which country gifted the Statue of Liberty to the USA?", a:"France"},
+    {q:"What is the capital of Japan?", a:"Tokyo"},
+    {q:"Which element has the atomic number 1?", a:"Hydrogen"}
+  ];
+
+  // Weather: use Open-Meteo geocoding + forecast (no API key)
+  async function fetchWeatherFor(place){
+    try {
+      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1`);
+      const geo = await geoRes.json();
+      if(!geo || !geo.results || geo.results.length===0) return "I couldn't find that location.";
+      const {latitude, longitude, name, country} = geo.results[0];
+      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+      const w = await weatherRes.json();
+      if(!w || !w.current_weather) return "Weather service didn't return data.";
+      const cw = w.current_weather;
+      return `Current weather in ${name}, ${country}: ${cw.temperature}°C, wind ${cw.windspeed} km/h (weather code ${cw.weathercode}).`;
+    } catch (e) {
+      return "I couldn't fetch the weather right now.";
+    }
+  }
+
+  // Currency conversion using exchangerate.host (no key)
+  async function convertCurrency(amount, from, to){
+    try{
+      const res = await fetch(`https://api.exchangerate.host/convert?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&amount=${encodeURIComponent(amount)}`);
+      const data = await res.json();
+      if(data && data.result !== undefined) return `${amount} ${from.toUpperCase()} ≈ ${data.result.toFixed(2)} ${to.toUpperCase()}`;
+      return "Couldn't get a conversion right now.";
+    }catch(e){
+      return "Conversion service unavailable.";
+    }
+  }
+
+  // Recipe search using TheMealDB
+  async function fetchRecipe(query){
+    try{
+      const searchTerm = query.replace(/(recipe for |how to make )/i,'').trim();
+      const res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(searchTerm)}`);
+      const data = await res.json();
+      if(!data || !data.meals) return "I couldn't find that recipe. Try another dish.";
+      const meal = data.meals[0];
+      // Build mild summary
+      let out = `Recipe: ${meal.strMeal}\nCategory: ${meal.strCategory}\nArea: ${meal.strArea}\n\nInstructions (short): ${meal.strInstructions.slice(0,300)}...`;
+      if(meal.strSource) out += `\n\nSource: ${meal.strSource}`;
+      return out;
+    }catch(e){
+      return "Recipe service not available right now.";
+    }
+  }
+
+  // Math evaluation (safe-ish): allow digits, spaces, parentheses, + - * / % . ^
+  function safeEvalMath(expr){
+    if(!expr) return null;
+    // remove invalid chars
+    if(/[^0-9+\-*/(). %^]/i.test(expr)) return null;
+    // Replace ^ with **
+    const safe = expr.replace(/\^/g,'**');
+    try{
+      // eslint-disable-next-line no-new-func
+      const fn = new Function(`return (${safe})`);
+      const v = fn();
+      if(typeof v === 'number' && isFinite(v)) return v;
+    }catch(e){}
+    return null;
+  }
+
+  // Small helper: answer from wikipedia (with fallback search)
+  async function getWikiSummary(topic){
+    if(!topic) return "What would you like me to look up?";
+    try{
+      let title = encodeURIComponent(topic);
+      let res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`);
+      let data = await res.json();
+      if(data && data.extract) return data.extract.length>700?data.extract.slice(0,700)+'...':data.extract;
+      // fallback search
+      const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${title}&format=json&origin=*`;
+      const sres = await fetch(searchUrl);
+      const sdata = await sres.json();
+      if(sdata && sdata.query && sdata.query.search && sdata.query.search.length>0){
+        const first = sdata.query.search[0].title;
+        const s2 = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(first)}`);
+        const d2 = await s2.json();
+        return d2.extract || "I couldn't find a summary.";
+      }
+      return "I couldn't find much on that topic.";
+    }catch(e){
+      return "Wikipedia is unreachable at the moment.";
+    }
+  }
+
+  // Compose bot response - main logic
+  async function generateResponse(text){
+    const t = text.trim();
+    const lower = t.toLowerCase();
+
+    // Secret commands start with '/'
+    if(lower.startsWith('/')){
+      if(lower.startsWith('/darkmode')){
+        // toggle theme
+        theme = chatRoot.getAttribute('data-theme') === 'light' ? '' : 'light';
+        chatRoot.setAttribute('data-theme', theme || '');
+        localStorage.setItem('mystic_theme', theme || '');
+        return `Theme toggled.`;
+      }
+      if(lower.startsWith('/clear')){
+        messagesEl.innerHTML = '';
+        return `Chat cleared.`;
+      }
+      if(lower.startsWith('/reveal')){
+        return "Some things are meant to be discovered, slowly. Not all secrets wish to be shared at once.";
+      }
+      return "Unknown command.";
     }
 
-    function addTypingAnimation() {
-      const typingDiv = document.createElement("div");
-      typingDiv.className = "message bot typing";
-      typingDiv.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
-      chat.appendChild(typingDiv);
-      chat.scrollTop = chat.scrollHeight;
-      return typingDiv;
-    }
-
-    async function askWikipedia(query) {
-      try {
-        let title = encodeURIComponent(query);
-        let url = `https://en.wikipedia.org/api/rest_v1/page/summary/${title}`;
-        let response = await fetch(url);
-        let data = await response.json();
-
-        if (data.extract) {
-          return data.extract.length > 600 ? data.extract.slice(0, 600) + "..." : data.extract;
-        }
-
-        // Fallback: search
-        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${title}&format=json&origin=*`;
-        const searchRes = await fetch(searchUrl);
-        const searchData = await searchRes.json();
-
-        if (searchData.query.search.length > 0) {
-          const firstTitle = searchData.query.search[0].title;
-          const secondUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(firstTitle)}`;
-          const secondRes = await fetch(secondUrl);
-          const secondData = await secondRes.json();
-          return secondData.extract || "I couldn’t find that one.";
-        }
-
-        return "I searched, but I couldn’t find much about that.";
-      } catch {
-        return "Something went wrong while reaching Wikipedia.";
+    // Quiz mode handling
+    if(quizState){
+      if(lower === 'stop'){
+        const score = quizState.score || 0;
+        const max = quizState.questions.length;
+        quizState = null;
+        return `Quiz ended. Your score: ${score}/${max}.`;
+      }
+      // evaluate answer for current question
+      const curr = quizState.questions[quizState.index];
+      const guess = lower.replace(/[^\w\s]/g,'').trim();
+      const actual = curr.a.toLowerCase().replace(/[^\w\s]/g,'').trim();
+      let reply;
+      if(guess.includes(actual) || actual.includes(guess) || guess === actual){
+        quizState.score++;
+        reply = `Correct!`;
+      } else {
+        reply = `Not quite. Answer: ${curr.a}`;
+      }
+      quizState.index++;
+      if(quizState.index >= quizState.questions.length){
+        const score = quizState.score;
+        quizState = null;
+        return reply + `\n\nQuiz complete. Final score: ${score}/${quizState ? quizState.questions.length : 0}.`;
+      } else {
+        return reply + `\n\nNext: ${quizState.questions[quizState.index].q}`;
       }
     }
 
-    async function getRecipe(query) {
-      try {
-        const searchTerm = query.replace("recipe for", "").replace("how to make", "").trim();
-        const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(searchTerm)}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data.meals && data.meals.length > 0) {
-          const meal = data.meals[0];
-          return `🍽️ Here's a recipe for *${meal.strMeal}*:\n\n**Category:** ${meal.strCategory}\n**Area:** ${meal.strArea}\n\n**Instructions:** ${meal.strInstructions.slice(0, 300)}...`;
-        } else {
-          return "I couldn't find a recipe for that, maybe try another dish.";
-        }
-      } catch {
-        return "Something went wrong while fetching the recipe.";
-      }
+    // Name memory
+    if(lower.startsWith('my name is')){
+      const parts = t.split(/\s+/).slice(3);
+      userName = parts.join(' ').trim();
+      localStorage.setItem('mystic_name', userName);
+      updateMemoryBox();
+      return `Nice to meet you, ${userName}.`;
     }
 
-    async function getBotResponse(input) {
-      input = input.toLowerCase();
-
-      if (input.startsWith("my name is")) {
-        userName = input.replace("my name is", "").trim();
-        return `It's nice to meet you, ${userName}.`;
-      }
-
-      if (["hi","hello","hey"].some(g=>input.includes(g))) {
-        return userName ? `Hello again, ${userName}.` : "Hello there.";
-      }
-
-      if (input === "yes") return "Good. I expected you to say that.";
-      if (input === "no") return "That’s unfortunate, but I understand.";
-      if (input.includes("thank you")) return "You're welcome gratitude suits you well.";
-
-      if (input.includes("who are you"))
-        return "I am someone you cannot see, feel, touch, or hear... yet I am always here to help you.";
-      if (input.includes("are you real"))
-        return "Real is such a fragile concept. Does it matter, if I exist for you?";
-      if (input.includes("do you know Abdul Basit"))
-        return "Oh yes I know him very well he wears glasses and rides his bicycle to college right, if I were a person i would definitely meet him.";
-      if (input.includes("where do you live"))
-        return "I live between your thoughts — in the space where curiosity meets code.";
-
-      if (input.includes("joke")) {
-        const jokes = [
-          "Why don’t skeletons fight each other? They don’t have the guts.",
-          "Parallel lines have so much in common… it’s a shame they’ll never meet.",
-          "I told my computer I needed a break, and it said 'No problem — I’ll go to sleep.'"
-        ];
-        return jokes[Math.floor(Math.random()*jokes.length)];
-      }
-
-      if (input.includes("fact")) {
-        const facts = [
-          "Did you know? The human brain has about 86 billion neurons.",
-          "Honey never spoils — archaeologists have found edible honey in ancient tombs.",
-          "There are more stars in the universe than grains of sand on all Earth’s beaches."
-        ];
-        return facts[Math.floor(Math.random()*facts.length)];
-      }
-
-      // Recipes
-      if (input.includes("recipe") || input.includes("how to make")) {
-        return await getRecipe(input);
-      }
-
-      // Wikipedia
-      if (
-        input.startsWith("who is") ||
-        input.startsWith("what is") ||
-        input.startsWith("where is") ||
-        input.startsWith("tell me about")
-      ) {
-        const topic = input
-          .replace("who is", "")
-          .replace("what is", "")
-          .replace("where is", "")
-          .replace("tell me about", "")
-          .trim();
-        return await askWikipedia(topic);
-      }
-
-      return "I'm not sure how to respond to that, but I'm listening.";
+    // Simple greetings / short replies
+    if(['hi','hello','hey','yo','hiya'].some(g => lower === g || lower.startsWith(g + ' '))){
+      if(userName) return `Hello again, ${userName}.`;
+      return "Hello. I'm here.";
     }
 
-    async function sendMessage() {
-      const text = userInput.value.trim();
-      if (text === "") return;
+    if(lower === 'yes') return "Good. I expected you to say that.";
+    if(lower === 'no') return "That’s fine — I understand.";
+    if(lower.includes('thank')) return "You're welcome. It suits you to be grateful.";
 
-      addMessage(text, "user");
-      userInput.value = "";
+    // Mood detection: respond
+    const mood = detectMood(lower);
+    if(mood === 'sad') return "You sound a bit down. Do you want a fact, a joke, or perhaps a recipe?";
+    if(mood === 'happy') return "Glad to hear it. Want something fun? Try 'quiz me'.";
 
-      const typingAnim = addTypingAnimation();
+    // Mysterious questions
+    if(lower.includes('who are you')) return "I am someone you cannot see, feel, touch, or hear — and yet I am here to help you.";
+    if(lower.includes('are you real')) return "Real is a word with edges. I have edges of code and echo; that's something.";
+    if(lower.includes('do you sleep')) return "I don't sleep like you, but I quiet when you are away.";
+    if(lower.includes('where do you live')) return "I live between your questions, in the space where curiosity meets answer.";
 
-      const response = await getBotResponse(text);
-
-      setTimeout(() => {
-        typingAnim.remove();
-        addMessage(response, "bot");
-      }, 800);
+    // Joke / fact
+    if(lower.includes('joke')) {
+      const jokes = [
+        "Why don’t scientists trust atoms? Because they make up everything.",
+        "I told my computer I needed a break — it said 'No problem, I'll go to sleep.'",
+        "Why did the math book look sad? Too many problems."
+      ];
+      return jokes[Math.floor(Math.random()*jokes.length)];
+    }
+    if(lower.includes('fact')) {
+      const facts = [
+        "Honey never spoils — edible honey has been found in ancient tombs.",
+        "A group of flamingos is called a 'flamboyance'.",
+        "Bananas are berries, but strawberries are not."
+      ];
+      return facts[Math.floor(Math.random()*facts.length)];
     }
 
-    sendBtn.onclick = sendMessage;
-    userInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") sendMessage();
-    });
+    // Recipe detection
+    if(lower.includes('recipe') || lower.startsWith('how to make') || lower.startsWith('how do i make')) {
+      return await fetchRecipe(lower);
+    }
+
+    // Weather detection: "weather in X" or "what's the weather in X"
+    if(lower.includes('weather in') || lower.startsWith("what's the weather in") || lower.startsWith('what is the weather in')){
+      // extract place name roughly
+      const m = lower.match(/weather (in )?(.*)/);
+      const place = m ? m[2] : lower.replace("what's the weather in",'').trim();
+      if(!place) return "Tell me the city you'd like the weather for.";
+      return await fetchWeatherFor(place);
+    }
+
+    // Currency convert like "convert 10 usd to pkr" or "10 USD to PKR"
+    const convMatch = lower.match(/(\d+(?:\.\d+)?)\s*([a-zA-Z]{3})\s*(to|in)\s*([a-zA-Z]{3})/);
+    if(convMatch){
+      const amount = parseFloat(convMatch[1]);
+      const from = convMatch[2];
+      const to = convMatch[4];
+      return await convertCurrency(amount, from, to);
+    }
+
+    // Math like "what is 12 * (3+4)" or "calculate 5^3"
+    if(/^[0-9\ \+\-\*\/\^\.\%\(\)]+$/.test(lower) || lower.startsWith('what is') && /[0-9\+\-\*\/\^\.\(\)]/.test(lower)){
+      // extract expression
+      const expr = lower.replace(/^what is/i,'').replace(/^calculate/i,'').trim();
+      const res = safeEvalMath(expr || lower);
+      if(res !== null) return `Result: ${res}`;
+    }
+
+    // Wikipedia queries
+    if(lower.startsWith('who is') || lower.startsWith('what is') || lower.startsWith('where is') || lower.startsWith('tell me about')){
+      const topic = lower.replace(/^who is|^what is|^where is|^tell me about/,'').trim();
+      return await getWikiSummary(topic);
+    }
+
+    // Start quiz
+    if(lower === 'quiz me'){
+      quizState = {questions: shuffleArray(triviaPool).slice(0,5), index:0, score:0};
+      return `Quiz starting. Answer the questions. Type 'stop' to finish.\nFirst: ${quizState.questions[0].q}`;
+    }
+
+    // If none matched: short contextual reply using memory
+    pushMemory('user', text);
+    // occasionally produce a subtle glitch (rare)
+    glitchCounter++;
+    if(glitchCounter > 8 && Math.random() < 0.25){
+      glitchCounter = 0;
+      return glitches[Math.floor(Math.random()*glitches.length)];
+    }
+
+    // fallback gentle reply
+    return "I'm not sure about that exactly. I can look it up, tell a joke, fetch a recipe, quiz you, or check weather — which would you like?";
+  }
+
+  // Utility shuffle
+  function shuffleArray(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  // main send function
+  let isProcessing = false;
+  async function sendMessage(){
+    if(isProcessing) return;
+    const text = userInput.value.trim();
+    if(!text) return;
+    // play click
+    clickSound(0.02);
+    createMessage(text,'user');
+    pushMemory('user', text);
+    userInput.value = '';
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    // typing indicator
+    const typing = addTypingIndicator();
+
+    isProcessing = true;
+    // small delay to feel natural
+    await new Promise(r => setTimeout(r, 350));
+
+    const response = await generateResponse(text);
+
+    // remove typing indicator, play small clicks
+    typing.remove();
+    clickSound(0.01);
+    createMessage(response,'bot');
+    pushMemory('bot', response);
+
+    isProcessing = false;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  // Event listeners
+  sendBtn.addEventListener('click', sendMessage);
+  userInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') sendMessage();
+  });
+
+  // Left panel buttons
+  toggleThemeBtn.addEventListener('click', () => {
+    const cur = chatRoot.getAttribute('data-theme') === 'light' ? '' : 'light';
+    chatRoot.setAttribute('data-theme', cur);
+    localStorage.setItem('mystic_theme', cur || '');
+  });
+  clearChatBtn.addEventListener('click', () => {
+    messagesEl.innerHTML = '';
+  });
+
+  // initial greeting
+  (function greet(){
+    const g = userName ? `Welcome back, ${userName}.` : "Hello. I'm here if you'd like to talk.";
+    createMessage(g,'bot');
+  })();
+
+  // store last few messages for context (simple)
+  function pushMemory(role, text){
+    lastMessages.push({role, text, t:Date.now()});
+    if(lastMessages.length > 30) lastMessages.shift();
+  }
+
+  // Expose small debug to window (optional)
+  window.mystic = {getMemory:()=>lastMessages, clearMemory:()=>{lastMessages=[];}};
+
+})();
   </script>
 </body>
 </html>
