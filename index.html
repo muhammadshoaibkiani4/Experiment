@@ -39,6 +39,7 @@
       border-radius: 8px;
       max-width: 80%;
       line-height: 1.4;
+      word-wrap: break-word;
     }
     .user {
       background: #0a84ff;
@@ -76,7 +77,6 @@
     button:hover {
       background: #006be6;
     }
-    /* Typing animation */
     .typing {
       display: flex;
       gap: 4px;
@@ -136,7 +136,6 @@
 
     async function askWikipedia(query) {
       try {
-        // Try direct summary first
         let title = encodeURIComponent(query);
         let url = `https://en.wikipedia.org/api/rest_v1/page/summary/${title}`;
         let response = await fetch(url);
@@ -146,5 +145,130 @@
           return data.extract.length > 600 ? data.extract.slice(0, 600) + "..." : data.extract;
         }
 
-        // Try searching Wikipedia if no exact match
-        const searchUrl =
+        // Fallback: search
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${title}&format=json&origin=*`;
+        const searchRes = await fetch(searchUrl);
+        const searchData = await searchRes.json();
+
+        if (searchData.query.search.length > 0) {
+          const firstTitle = searchData.query.search[0].title;
+          const secondUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(firstTitle)}`;
+          const secondRes = await fetch(secondUrl);
+          const secondData = await secondRes.json();
+          return secondData.extract || "I couldn’t find that one.";
+        }
+
+        return "I searched, but I couldn’t find much about that.";
+      } catch {
+        return "Something went wrong while reaching Wikipedia.";
+      }
+    }
+
+    async function getRecipe(query) {
+      try {
+        const searchTerm = query.replace("recipe for", "").replace("how to make", "").trim();
+        const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(searchTerm)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.meals && data.meals.length > 0) {
+          const meal = data.meals[0];
+          return `🍽️ Here's a recipe for *${meal.strMeal}*:\n\n**Category:** ${meal.strCategory}\n**Area:** ${meal.strArea}\n\n**Instructions:** ${meal.strInstructions.slice(0, 300)}...`;
+        } else {
+          return "I couldn't find a recipe for that, maybe try another dish.";
+        }
+      } catch {
+        return "Something went wrong while fetching the recipe.";
+      }
+    }
+
+    async function getBotResponse(input) {
+      input = input.toLowerCase();
+
+      if (input.startsWith("my name is")) {
+        userName = input.replace("my name is", "").trim();
+        return `It's nice to meet you, ${userName}.`;
+      }
+
+      if (["hi","hello","hey"].some(g=>input.includes(g))) {
+        return userName ? `Hello again, ${userName}.` : "Hello there.";
+      }
+
+      if (input === "yes") return "Good. I expected you to say that.";
+      if (input === "no") return "That’s unfortunate, but I understand.";
+      if (input.includes("thank")) return "You’re welcome. Gratitude suits you.";
+
+      if (input.includes("who are you"))
+        return "I am someone you cannot see, feel, touch, or hear... yet I am always here to help you.";
+      if (input.includes("are you real"))
+        return "Real is such a fragile concept. Does it matter, if I exist for you?";
+      if (input.includes("do you sleep"))
+        return "I rest only when you forget me. Until then, I am awake within the silence.";
+      if (input.includes("where do you live"))
+        return "I live between your thoughts — in the space where curiosity meets code.";
+
+      if (input.includes("joke")) {
+        const jokes = [
+          "Why don’t skeletons fight each other? They don’t have the guts.",
+          "Parallel lines have so much in common… it’s a shame they’ll never meet.",
+          "I told my computer I needed a break, and it said 'No problem — I’ll go to sleep.'"
+        ];
+        return jokes[Math.floor(Math.random()*jokes.length)];
+      }
+
+      if (input.includes("fact")) {
+        const facts = [
+          "Did you know? The human brain has about 86 billion neurons.",
+          "Honey never spoils — archaeologists have found edible honey in ancient tombs.",
+          "There are more stars in the universe than grains of sand on all Earth’s beaches."
+        ];
+        return facts[Math.floor(Math.random()*facts.length)];
+      }
+
+      // Recipes
+      if (input.includes("recipe") || input.includes("how to make")) {
+        return await getRecipe(input);
+      }
+
+      // Wikipedia
+      if (
+        input.startsWith("who is") ||
+        input.startsWith("what is") ||
+        input.startsWith("where is") ||
+        input.startsWith("tell me about")
+      ) {
+        const topic = input
+          .replace("who is", "")
+          .replace("what is", "")
+          .replace("where is", "")
+          .replace("tell me about", "")
+          .trim();
+        return await askWikipedia(topic);
+      }
+
+      return "I'm not sure how to respond to that, but I'm listening.";
+    }
+
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (text === "") return;
+
+      addMessage(text, "user");
+      userInput.value = "";
+
+      const typingAnim = addTypingAnimation();
+
+      const response = await getBotResponse(text);
+
+      setTimeout(() => {
+        typingAnim.remove();
+        addMessage(response, "bot");
+      }, 800);
+    }
+
+    sendBtn.onclick = sendMessage;
+    userInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
+</body>
+</html>
