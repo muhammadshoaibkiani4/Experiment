@@ -85,7 +85,7 @@
   </style>
 </head>
 <body>
-  <!-- 🎵 Place your audio file in the same folder and replace "your-sound.mp3" below -->
+  <!-- 🎵 Background Music -->
   <audio id="bgMusic" loop>
     <source src="Chat_ambience.mp3" type="audio/mpeg">
   </audio>
@@ -127,11 +127,10 @@
   </div>
 
 <script>
+/* 🎵 Background Music + Clock */
 const bgMusic = document.getElementById("bgMusic");
-bgMusic.volume = 0.15; // 🎚️ set to gentle background volume
+bgMusic.volume = 0.1;
 const musicToggle = document.getElementById("musicToggle");
-
-// Toggle play/pause
 musicToggle.addEventListener("click", () => {
   if (bgMusic.paused) {
     bgMusic.play();
@@ -141,8 +140,6 @@ musicToggle.addEventListener("click", () => {
     musicToggle.classList.remove("active");
   }
 });
-
-// 🕒 Clock
 function updateClock() {
   const now = new Date();
   const h = String(now.getHours()).padStart(2, "0");
@@ -151,11 +148,24 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 updateClock();
-</script>
 
-<!-- Your existing script remains below untouched -->
-<script>
-/* your long JavaScript remains unchanged */
-</script>
-</body>
-</html>
+/* 💬 Chat Logic */
+const sendBtn = document.getElementById("sendBtn");
+const userInput = document.getElementById("userInput");
+const messages = document.getElementById("messages");
+const clearChat = document.getElementById("clearChat");
+const toggleTheme = document.getElementById("toggleTheme");
+const chatRoot = document.getElementById("chatRoot");
+
+function addMessage(text, sender="bot") {
+  const msg = document.createElement("div");
+  msg.classList.add("msg", sender);
+  msg.textContent = text;
+  messages.appendChild(msg);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function botReply(input) {
+  const lower = input.toLowerCase();
+  if (lower.includes("hello")) return "Hello there.";
+  if (lower.includes("joke")) return "Why did the AI go to therapy? It had too
